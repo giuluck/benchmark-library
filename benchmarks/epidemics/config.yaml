@@ -1,0 +1,53 @@
+variables:
+  s0:
+    dtype: float
+    domain: 0 <= v <= 1
+    description: the percentage of initial susceptibles
+
+  i0:
+    dtype: float
+    domain: 0 <= v <= 1
+    description: the percentage of initial infected
+
+  r0:
+    dtype: float
+    domain: 0 <= v <= 1
+    description: the percentage of initial recovered
+
+  beta:
+    dtype: float
+    domain: v > 0
+    description: the infection rate
+
+parameters:
+  gamma:
+    default: 1. / 14
+    dtype: float
+    domain: v > 0
+    description: the recovery rate
+
+  horizon:
+    default: 300
+    dtype: int
+    domain: v > 0
+    description: the time horizon of the simulation
+
+constraints:
+  percentage:
+    domain: s0 + i0 + r0 == 1
+    description: the percentages of initial susceptibles, infected, and recovered must sum up to one
+
+description: |
+  Let us assume that we are at the early stages of an epidemic.
+  We want to do our best to control while we wait for a cure/vaccine.
+  Hence, we need to decide which actions to take in order to minimize the total number of infected.
+  But we are subjected to a variety of constraints (e.g. socio-economical impact).
+
+  For our epidemics we will rely on a SIR model, which is the simplest type of compartmental model.
+  The population is divided into three groups (compartments), i.e. Susceptibles (S), Infected (I), and Recovered (R).
+  The classical SIR model is dynamic, indeed the size of the three groups evolves over time.
+  The evolution of the model is defined by the following system of Ordinary Differential Equations (ODEs):
+      dS = -𝛽 * S * I / N
+      dI = 𝛽 * S * I / N - 𝛾 * I
+      dR = 𝛾 * I
+  with N being the total population size, and 𝛽 and 𝛾 the infection and recovery rate, respectively.
