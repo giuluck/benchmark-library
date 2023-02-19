@@ -1,6 +1,5 @@
-from benchmarks import Ackley
+from benchmarks import EpidemicControl
 
 if __name__ == "__main__":
-    benchmark = Ackley()
+    benchmark = EpidemicControl()
     print(benchmark)
-    print(benchmark.describe())
