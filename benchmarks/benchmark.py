@@ -1,6 +1,6 @@
 import collections
 import re
-from abc import abstractmethod, ABCMeta
+from abc import abstractmethod, ABC
 from typing import Optional, Any, Dict, List
 
 import dill
@@ -11,7 +11,7 @@ from datatypes import Variable, Parameter, Constraint
 from utils.strings import stringify
 
 
-class Benchmark(metaclass=ABCMeta):
+class Benchmark(ABC):
     """Abstract class for custom benchmarks."""
 
     Sample = collections.namedtuple('Sample', 'input output')
@@ -171,8 +171,8 @@ class Benchmark(metaclass=ABCMeta):
         assert len(variables) == 0, f"No value was provided for parameters {list(variables.keys())}"
         # check global constraints feasibility
         for name, constraint in self.constraints.items():
-            msg = f"Global constraint '{name}' ({constraint.domain}) is not satisfied."
-            assert constraint.is_feasible(**inputs, **self.configuration), msg
+            msg = f"{constraint.description.capitalize()}; global constraint '{constraint.name}' not satisfied"
+            assert constraint.is_satisfied(v=inputs, p=self.configuration), msg
         # evaluate the function, store the results (with variable assignments as well), and eventually return the output
         output = self._eval(**inputs)
         self.samples.append(Benchmark.Sample(input=inputs, output=output))

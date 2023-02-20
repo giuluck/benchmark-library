@@ -1,4 +1,5 @@
-from datatypes.constraints.constraint import Constraint
-from datatypes.parameters.parameter import Parameter
-from datatypes.variables.variable import Variable
-
+from datatypes.constraints import Constraint
+from datatypes.datatype import DataType
+from datatypes.parameters import Parameter
+from datatypes.values import Value
+from datatypes.variables import Variable

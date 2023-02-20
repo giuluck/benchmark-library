@@ -32,7 +32,7 @@ class Ackley(Benchmark):
         NumericParameter('a', default=20., description="the Ackley function 'a' parameter"),
         NumericParameter('b', default=0.2, description="the Ackley function 'b' parameter"),
         NumericParameter('c', default=2 * np.pi, description="the Ackley function 'c' parameter"),
-        NumericParameter('dim', default=1, integer=True, description="the input vector dimension"),
+        NumericParameter('dim', default=1, integer=True, description="the input vector dimension")
     ]
 
     def __init__(self,

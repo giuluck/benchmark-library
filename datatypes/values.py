@@ -1,11 +1,13 @@
-from abc import ABCMeta, abstractmethod
-from typing import Optional
+from abc import abstractmethod, ABC
+from dataclasses import dataclass, field
+from typing import Optional, Callable, Any
 
 from datatypes.datatype import DataType
 
 
-class Value(DataType, metaclass=ABCMeta):
-    """Interface for a Data Type with a value (variables and parameters)."""
+@dataclass(repr=False, frozen=True)
+class Value(DataType, ABC):
+    """Abstract class for data types with a value (variables and parameters)."""
 
     @property
     @abstractmethod
@@ -32,44 +34,45 @@ class Value(DataType, metaclass=ABCMeta):
         pass
 
 
-class NumericValue(Value, metaclass=ABCMeta):
-    """Interface for a Value object with numeric type and interval-based domain."""
+@dataclass(repr=False, frozen=True)
+class CustomValue(Value):
+    """A value object with custom domain and dtype."""
 
-    @property
-    @abstractmethod
-    def integer(self) -> bool:
-        """Whether the value is expected to be an integer or a real number."""
-        pass
+    dtype: type = field(default=object, kw_only=True)
+    """The instance type; default: object."""
 
-    @property
-    @abstractmethod
-    def internal(self) -> bool:
-        """Whether the domain is internal to the bounds (i.e., [lb, ub]) or external (i.e., [-inf, lb] U [ub, +inf])."""
-        pass
+    domain: str = field(default='all', kw_only=True)
+    """A textual description of the domain; default: 'all'."""
 
-    @property
-    @abstractmethod
-    def lb(self) -> Optional[float]:
-        """The lower bound of the interval or None for no lower bound."""
-        pass
+    in_domain: Callable[[Any], bool] = field(default=lambda v: True, kw_only=True)
+    """A function f(x) -> bool which defines whether the variable domain; default: f(x) -> True."""
 
-    @property
-    @abstractmethod
-    def ub(self) -> Optional[float]:
-        """The upper bound of the interval or None for no upper bound"""
-        pass
 
-    @property
-    @abstractmethod
-    def strict_lb(self) -> bool:
-        """Whether the lower bound is strict or not."""
-        pass
+@dataclass(repr=False, frozen=True)
+class NumericValue(Value):
+    """A value object with numeric type and interval-based domain."""
 
-    @property
-    @abstractmethod
-    def strict_ub(self) -> bool:
-        """Whether the upper bound is strict or not."""
-        pass
+    integer: bool = field(default=False, kw_only=True)
+    """Whether the value is expected to be an integer or a real number; default: False."""
+
+    internal: bool = field(default=True, kw_only=True)
+    """Whether the domain is internal to the bounds (i.e., [lb, ub]) or external (i.e., < lb or > ub); default: True."""
+
+    lb: Optional[float] = field(default=None, kw_only=True)
+    """The lower bound of the interval or None for no lower bound; default: None."""
+
+    ub: Optional[float] = field(default=None, kw_only=True)
+    """The upper bound of the interval or None for no upper bound; default: None."""
+
+    strict_lb: bool = field(default=False, kw_only=True)
+    """Whether the lower bound is strict or not; default: False."""
+
+    strict_ub: bool = field(default=False, kw_only=True)
+    """Whether the upper bound is strict or not; default: False."""
+
+    def __post_init__(self):
+        lb, ub = self.lb, self.ub
+        assert lb is None or ub is None or ub >= lb, f"'ub' must be greater or equal to 'lb', got {ub} < {lb}"
 
     @property
     def dtype(self) -> type:
@@ -141,14 +144,16 @@ class NumericValue(Value, metaclass=ABCMeta):
                 raise RuntimeError("Something went wrong during constraint checks")
 
 
-class CategoricalValue(Value, metaclass=ABCMeta):
-    """Interface for a Value object with custom data type and categorical domain."""
+# noinspection PyDataclass
+@dataclass(repr=False, frozen=True)
+class CategoricalValue(Value):
+    """A Value object with custom data type and categorical domain."""
 
-    @property
-    @abstractmethod
-    def categories(self) -> list:
-        """The discrete set of possible values defining the instance domain."""
-        pass
+    categories: set = field(kw_only=True)
+    """The discrete set of possible values defining the instance domain."""
+
+    dtype: type = field(default=object, kw_only=True)
+    """The expected instance type; default: object."""
 
     @property
     def domain(self) -> str:
@@ -156,3 +161,121 @@ class CategoricalValue(Value, metaclass=ABCMeta):
 
     def in_domain(self, v) -> bool:
         return v in self.categories
+
+
+# noinspection PyDataclass,PyRedeclaration
+@dataclass(repr=False, frozen=True)
+class PositiveValue(NumericValue):
+    """A value object with numeric type which can assume positive values only."""
+
+    strict: bool = field(default=False, kw_only=True)
+    """Whether the value must be strictly positive or it can have value zero; default = False."""
+
+    # non-init parameters
+    internal: bool = field(default=True, init=False)
+    lb: Optional[float] = field(default=0.0, init=False)
+    ub: Optional[float] = field(default=None, init=False)
+    strict_ub: bool = field(default=True, init=False)
+
+    # redeclare 'strict_lb' as a property to match 'strict'
+    strict_lb: bool = field(init=False)
+
+    @property
+    def strict_lb(self) -> bool:
+        return self.strict
+
+    @strict_lb.setter
+    def strict_lb(self, value: bool):
+        pass
+
+
+# noinspection PyDataclass,PyRedeclaration
+@dataclass(repr=False, frozen=True)
+class NegativeValue(NumericValue):
+    """A value object with numeric type which can assume negative values only."""
+
+    strict: bool = field(default=False, kw_only=True)
+    """Whether the value must be strictly negative or it can have value zero; default = False."""
+
+    # non-init parameters
+    internal: bool = field(default=True, init=False)
+    lb: Optional[float] = field(default=None, init=False)
+    ub: Optional[float] = field(default=0.0, init=False)
+    strict_ub: bool = field(default=False, init=False)
+
+    # redeclare 'strict_ub' as a property to match 'strict'
+    strict_lb: bool = field(init=False)
+
+    @property
+    def strict_ub(self) -> bool:
+        return self.strict
+
+    @strict_ub.setter
+    def strict_ub(self, value: bool):
+        pass
+
+
+# noinspection PyDataclass,PyRedeclaration
+@dataclass(repr=False, frozen=True)
+class ThresholdValue(NumericValue):
+    """A value object with numeric type which must be smaller than a certain threshold in absolute value."""
+
+    threshold: float = field(kw_only=True)
+    """A positive value representing the threshold."""
+
+    strict: bool = field(default=False, kw_only=True)
+    """Whether the value must be strictly smaller than the threshold or not; default = False."""
+
+    # non-init parameters
+    internal: bool = field(default=True, init=False)
+
+    def __post_init__(self):
+        assert self.threshold > 0, f"threshold should be a positive value, got {self.threshold}"
+
+    # redeclare bounds and strict as properties to match new parameters
+    lb: Optional[float] = field(init=False)
+    ub: Optional[float] = field(init=False)
+    strict_lb: bool = field(init=False)
+    strict_ub: bool = field(init=False)
+
+    @property
+    def lb(self) -> float:
+        return -self.threshold
+
+    @lb.setter
+    def lb(self, value: float):
+        pass
+
+    @property
+    def ub(self) -> float:
+        return self.threshold
+
+    @ub.setter
+    def ub(self, value: float):
+        pass
+
+    @property
+    def strict_lb(self) -> bool:
+        return self.strict
+
+    @strict_lb.setter
+    def strict_lb(self, value: bool):
+        pass
+
+    @property
+    def strict_ub(self) -> bool:
+        return self.strict
+
+    @strict_ub.setter
+    def strict_ub(self, value: bool):
+        pass
+
+
+# noinspection PyDataclass,PyRedeclaration
+@dataclass(repr=False, frozen=True)
+class BinaryValue(CategoricalValue):
+    """A value object which can only assume value 0 or 1."""
+
+    # non-init parameters
+    categories: tuple = field(default_factory=lambda: {0, 1}, init=False)
+    dtype: type = field(default=int, init=False)

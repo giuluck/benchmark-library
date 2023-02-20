@@ -5,8 +5,8 @@ import pandas as pd
 from scipy.integrate import odeint
 
 from benchmarks.benchmark import Benchmark
-from datatypes.constraints.constraint import CustomConstraint
-from datatypes.parameters import PositiveParameter
+from datatypes.constraints import CustomConstraint
+from datatypes.parameters import PositiveParameter, NumericParameter
 from datatypes.variables import PositiveVariable
 
 
@@ -33,12 +33,12 @@ class EpidemicControl(Benchmark):
         PositiveVariable('s0', description='the percentage of initial susceptibles'),
         PositiveVariable('i0', description='the percentage of initial infected'),
         PositiveVariable('r0', description='the percentage of initial recovered'),
-        PositiveVariable('beta', description='the infection rate')
+        PositiveVariable('beta', strict=True, description='the infection rate')
     ]
 
     _parameters = [
-        PositiveParameter('gamma', default=1./14, description='the recovery rate'),
-        PositiveParameter('horizon', default=300, integer=True, description='the time horizon of the simulation')
+        PositiveParameter('gamma', default=1. / 14, strict=True, description='the recovery rate'),
+        NumericParameter('horizon', default=300, lb=1, integer=True, description='the time horizon of the simulation')
     ]
 
     _constraints = [
