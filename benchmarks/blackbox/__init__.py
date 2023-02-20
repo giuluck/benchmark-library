@@ -1,12 +1,13 @@
-from typing import Optional
-
 import numpy as np
 
 from benchmarks.benchmark import Benchmark
+from datatypes.constraints import CustomConstraint
 from datatypes.parameters import NumericParameter
 from datatypes.variables import CustomVariable
+from utils.decorators import benchmark
 
 
+@benchmark
 class Ackley(Benchmark):
     """
     The Ackley function is a non-convex function used as a performance test problem for optimization algorithms.
@@ -25,7 +26,7 @@ class Ackley(Benchmark):
     _package = "ackley"
 
     _variables = [
-        CustomVariable('x', dtype=np.ndarray, description="the input vector")
+        CustomVariable('x', dtype=list, description="the input vector")
     ]
 
     _parameters = [
@@ -35,24 +36,23 @@ class Ackley(Benchmark):
         NumericParameter('dim', default=1, integer=True, description="the input vector dimension")
     ]
 
-    def __init__(self,
-                 name: Optional[str] = None,
-                 seed: int = 42,
-                 a: float = 20.0,
-                 b: float = 0.2,
-                 c: float = 2 * np.pi,
-                 dim: int = 1):
-        self.a: float = a
-        self.b: float = b
-        self.c: float = c
-        self.dim: int = dim
-        super(Ackley, self).__init__(name=name, seed=seed)
+    _constraints = [
+        CustomConstraint(
+            name='input_dim',
+            satisfied_fn=lambda x, dim: len(x) == dim,
+            description=f"the input vector should have the correct input dimension 'dim'"
+        )
+    ]
 
-    def evaluate(self, x: np.ndarray) -> np.ndarray:
-        return super(Ackley, self).evaluate(x=x)
+    @staticmethod
+    def _query(x: list, a: float, b: float, c: float, dim: int) -> np.ndarray:
+        x = np.array(x)
+        term1 = a * np.exp(-b * np.sqrt(np.sum(x ** 2) / dim))
+        term2 = np.exp(np.sum(np.cos(c * x)) / dim)
+        return term1 + term2 - a - np.e
 
-    def _eval(self, x: np.ndarray) -> np.ndarray:
-        assert len(x) == self.dim, f"The input vector should have dimension {self.dim}, got {len(x)}"
-        term1 = self.a * np.exp(-self.b * np.sqrt(np.sum(x ** 2) / self.dim))
-        term2 = np.exp(np.sum(np.cos(self.c * x)) / self.dim)
-        return term1 + term2 - self.a - np.e
+    def __init__(self, name, seed, a, b, c, dim):
+        super(Ackley, self).__init__(name=name, seed=seed, a=a, b=b, c=c, dim=dim)
+
+    def query(self, x) -> np.ndarray:
+        return super(Ackley, self).query(x=x)

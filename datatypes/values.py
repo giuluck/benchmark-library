@@ -44,8 +44,11 @@ class CustomValue(Value):
     domain: str = field(default='all', kw_only=True)
     """A textual description of the domain; default: 'all'."""
 
-    in_domain: Callable[[Any], bool] = field(default=lambda v: True, kw_only=True)
+    domain_fn: Callable[[Any], bool] = field(default=lambda v: True, kw_only=True)
     """A function f(x) -> bool which defines whether the variable domain; default: f(x) -> True."""
+
+    def in_domain(self, v) -> bool:
+        return self.domain_fn(v)
 
 
 @dataclass(repr=False, frozen=True)

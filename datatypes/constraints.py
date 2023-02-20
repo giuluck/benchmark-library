@@ -1,3 +1,4 @@
+import inspect
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
 from typing import Dict, Any, Callable
@@ -10,14 +11,11 @@ class Constraint(DataType, ABC):
     """Abstract class for global constraint on the input variables and parameters."""
 
     @abstractmethod
-    def is_satisfied(self, v: Dict[str, Any], p: Dict[str, Any]) -> bool:
+    def is_satisfied(self, **inputs: Any) -> bool:
         """Checks if the global constraint is satisfied.
 
-        :param v:
-            The dictionary of benchmark variables indexed by name.
-
-        :param p:
-            The dictionary of benchmark parameters indexed by name.
+        :param inputs:
+            The input values, containing both variables and parameters instances, indexed by name.
 
         :return:
             Whether or not the global constraint is satisfied by the given assignment of variables and parameters.
@@ -25,8 +23,14 @@ class Constraint(DataType, ABC):
         pass
 
 
+# noinspection PyDataclass
 @dataclass(repr=False, frozen=True)
 class CustomConstraint(Constraint):
-    # default value is necessary to override abstract method from base class
-    is_satisfied: Callable[[Dict[str, Any], Dict[str, Any]], bool] = field(default=lambda v, p: True, kw_only=True)
-    """A function f(v, p) -> bool which checks if the global constraint is satisfied; default: f(v, p) -> True."""
+    satisfied_fn: Callable = field(kw_only=True)
+    """A function f(...) -> bool which checks if the global constraint is satisfied. The input parameters must match
+    the names of either the benchmark variables or the benchmark parameters."""
+
+    def is_satisfied(self, **inputs) -> bool:
+        params = inspect.signature(self.satisfied_fn).parameters
+        inputs = {inp: val for inp, val in inputs.items() if inp in params}
+        return self.satisfied_fn(**inputs)

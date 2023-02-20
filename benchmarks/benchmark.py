@@ -22,6 +22,19 @@ class Benchmark(ABC):
     _parameters: List[Parameter] = []
     _constraints: List[Constraint] = []
 
+    @staticmethod
+    @abstractmethod
+    def _query(**inputs) -> Any:
+        """Evaluates the black-box function.
+
+        :param inputs:
+            The input values, containing both variables and parameters instances, indexed by name.
+
+        :return:
+            The evaluation of the function in the given input point.
+        """
+        pass
+
     @classproperty
     def _name(self) -> str:
         return ' '.join(re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', self.__name__)).split())
@@ -106,13 +119,16 @@ class Benchmark(ABC):
         with open(filepath, "rb") as file:
             return dill.load(file=file)
 
-    def __init__(self, name: Optional[str] = None, seed: int = 42):
+    def __init__(self, name: Optional[str] = None, seed: int = 42, **config):
         """
         :param name:
             The name of the benchmark instance, or None to use the default one; default: None.
 
         :param seed:
             The seed for random operations; default: 42.
+
+        :param config:
+            The benchmark-specific parameter values. If a parameter is not explicitly passed, its default value is used.
         """
         self.name: str = self._name.lower() if name is None else name
         """The name of the benchmark instance."""
@@ -126,7 +142,19 @@ class Benchmark(ABC):
         self.samples: List[Benchmark.Sample] = []
         """The list of samples <input, output> obtained by querying the 'evaluate' function."""
 
+        # check benchmark consistency
+        assert len(self._variables) > 0, "Benchmarks should have at least one variable, got 0"
+        names = [v.name for v in self._variables] + [p.name for p in self._parameters]
+        for i, n in enumerate(names):
+            assert n not in names[i + 1:], f"Variables and parameters cannot have duplicate names, got duplicate '{n}'"
+
+        # assign parameter values
         parameters = self.parameters
+        for param in self._parameters:
+            value = config[param.name] if param.name in config else param.default
+            setattr(self, param.name, value)
+
+        # check parameters configuration consistency
         for name, value in self.configuration.items():
             param = parameters[name]
             assert isinstance(value, param.dtype), f"'{name}' should be of type {stringify(param.dtype)}, got " \
@@ -137,19 +165,7 @@ class Benchmark(ABC):
     def configuration(self):
         return {p: self.__getattribute__(p) for p in self.parameters.keys()}
 
-    @abstractmethod
-    def _eval(self, **inputs) -> Any:
-        """Evaluates the black-box function.
-
-        :param inputs:
-            The input values, which must be indexed by the respective parameter name.
-
-        :return:
-            The evaluation of the function in the given input point.
-        """
-        pass
-
-    def evaluate(self, **inputs) -> Any:
+    def query(self, **inputs) -> Any:
         """Evaluates the black-box function and stores the result in the history of queries.
 
         :param inputs:
@@ -170,11 +186,12 @@ class Benchmark(ABC):
         # check that no expected parameter is left without a value
         assert len(variables) == 0, f"No value was provided for parameters {list(variables.keys())}"
         # check global constraints feasibility
+        config = self.configuration
         for name, constraint in self.constraints.items():
             msg = f"{constraint.description.capitalize()}; global constraint '{constraint.name}' not satisfied"
-            assert constraint.is_satisfied(v=inputs, p=self.configuration), msg
+            assert constraint.is_satisfied(**inputs, **config), msg
         # evaluate the function, store the results (with variable assignments as well), and eventually return the output
-        output = self._eval(**inputs)
+        output = self._query(**inputs, **config)
         self.samples.append(Benchmark.Sample(input=inputs, output=output))
         for var in self._variables:
             var.assignments.append(inputs[var.name])
