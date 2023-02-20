@@ -1,4 +1,3 @@
 Dickens~=2.0.0
 dill~=0.3.6
 numpy~=1.24.2
-PyYAML~=6.0
