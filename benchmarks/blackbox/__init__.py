@@ -1,14 +1,14 @@
+from typing import Optional
+
 import numpy as np
-from descriptors import classproperty
 
 from benchmarks import Benchmark
-from datatypes.constraints import CustomConstraint
+from datatypes.constraints import GenericConstraint
+from datatypes.metrics import ReferenceMetric
 from datatypes.parameters import NumericParameter
 from datatypes.variables import CustomVariable
-from utils.decorators import benchmark
 
 
-@benchmark
 class Ackley(Benchmark):
     """
     The Ackley function is a non-convex function used as a performance test problem for optimization algorithms.
@@ -24,23 +24,28 @@ class Ackley(Benchmark):
     The function has its minimum in f(0, ..., 0) = 0.
     """
 
-    @classproperty
-    def _structure(self):
-        return [
-            # variables
-            CustomVariable('x', dtype=list, description="the input vector"),
-            # parameters
-            NumericParameter('a', default=20., description="the Ackley function 'a' parameter"),
-            NumericParameter('b', default=0.2, description="the Ackley function 'b' parameter"),
-            NumericParameter('c', default=2 * np.pi, description="the Ackley function 'c' parameter"),
-            NumericParameter('dim', default=1, integer=True, lb=1, description="the input vector dimension"),
-            # constraints
-            CustomConstraint(
-                name='input_dim',
-                satisfied_fn=lambda x, dim: len(x) == dim,
-                description=f"the input vector should have the correct input dimension 'dim'"
-            )
-        ]
+    _structure = lambda: [
+        # variables
+        CustomVariable('x', dtype=list, description="the input vector"),
+        # parameters
+        NumericParameter('a', default=20., description="the Ackley function 'a' parameter"),
+        NumericParameter('b', default=0.2, description="the Ackley function 'b' parameter"),
+        NumericParameter('c', default=2 * np.pi, description="the Ackley function 'c' parameter"),
+        NumericParameter('dim', default=1, integer=True, lb=1, description="the input vector dimension"),
+        # constraints
+        GenericConstraint(
+            name='input_dim',
+            satisfied_fn=lambda x, dim: len(x) == dim,
+            description=f"the input vector should have the correct input dimension 'dim'"
+        ),
+        # metrics
+        ReferenceMetric(
+            name='gap',
+            metric='mae',
+            reference=0.0,
+            description='absolute gap from the optimum'
+        )
+    ]
 
     @staticmethod
     def _query(x, a, b, c, dim):
@@ -49,14 +54,19 @@ class Ackley(Benchmark):
         term2 = np.exp(np.sum(np.cos(c * x)) / dim)
         return term1 + term2 - a - np.e
 
-    def __init__(self, name, seed, a, b, c, dim):
+    def __init__(self,
+                 name: Optional[str] = None,
+                 seed: int = 42,
+                 a: float = 20.,
+                 b: float = 0.2,
+                 c: float = 2 * np.pi,
+                 dim: int = 1):
         super(Ackley, self).__init__(name=name, seed=seed, a=a, b=b, c=c, dim=dim)
 
-    def query(self, x) -> np.ndarray:
+    def query(self, x: list) -> np.ndarray:
         return super(Ackley, self).query(x=x)
 
 
-@benchmark
 class Rosenbrock(Benchmark):
     """
     The Rosenbrock function (a.k.a. Rosenbrock's valley or Rosenbrock's banana function) is a non-convex function.
@@ -73,21 +83,26 @@ class Rosenbrock(Benchmark):
     The function has its minimum in f(1, ..., 1) = 0.
     """
 
-    @classproperty
-    def _structure(self):
-        return [
-            # variables
-            CustomVariable('x', dtype=list, description="the input vector"),
-            # parameters
-            NumericParameter('b', default=100., description="the Rosenbrock function 'b' parameter"),
-            NumericParameter('dim', default=2, integer=True, lb=2, description="the input vector dimension"),
-            # constraints
-            CustomConstraint(
-                name='input_dim',
-                satisfied_fn=lambda x, dim: len(x) == dim,
-                description=f"the input vector should have the correct input dimension 'dim'"
-            )
-        ]
+    _structure = lambda: [
+        # variables
+        CustomVariable('x', dtype=list, description="the input vector"),
+        # parameters
+        NumericParameter('b', default=100., description="the Rosenbrock function 'b' parameter"),
+        NumericParameter('dim', default=2, integer=True, lb=2, description="the input vector dimension"),
+        # constraints
+        GenericConstraint(
+            name='input_dim',
+            satisfied_fn=lambda x, dim: len(x) == dim,
+            description=f"the input vector should have the correct input dimension 'dim'"
+        ),
+        # metrics
+        ReferenceMetric(
+            name='gap',
+            metric='mae',
+            reference=0.0,
+            description='absolute gap from the optimum'
+        )
+    ]
 
     @staticmethod
     def _query(x, b, dim):
@@ -96,8 +111,12 @@ class Rosenbrock(Benchmark):
         term2 = (1 - x[:-1]) ** 2
         return np.sum(term1 + term2)
 
-    def __init__(self, name, seed, b, dim):
+    def __init__(self,
+                 name: Optional[str] = None,
+                 seed: int = 42,
+                 b: float = 100.,
+                 dim: int = 1):
         super(Rosenbrock, self).__init__(name=name, seed=seed, b=b, dim=dim)
 
-    def query(self, x) -> np.ndarray:
+    def query(self, x: list) -> np.ndarray:
         return super(Rosenbrock, self).query(x=x)

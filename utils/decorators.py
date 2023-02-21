@@ -6,12 +6,15 @@ from benchmarks import Benchmark
 
 
 class BenchmarkDecorator:
-    """Decorator for a benchmark instance. It changes the signature of the '__init__' and 'query'  methods in order to
-    include the benchmark-specific inputs (i.e., variables and parameters instances). Even though the decorator takes
-    care of changing the input signature of the '__init__' and the 'query' methods, overriding them with the correct
-    parameter names is helpful for autocompletion in many IDEs. Similarly, the decorator also takes care of the default
-    values and annotations, but adding them will be beneficial for static type checking and signatures. Therefore, the
-    decorator can be used to find the wanted trade-off between detailed static API and boilerplate/maintenance costs.
+    """Decorator for a benchmark instance.
+    It changes the signature of the '__init__' and 'query'  methods in order to include the benchmark-specific inputs.
+    Even though the decorator takes care of changing the input signature of the '__init__' and the 'query' methods,
+    overriding them with the correct parameter names is helpful for autocompletion in many IDEs. Similarly, the
+    decorator also takes care of the default values and annotations, but adding them will be beneficial for static type
+    checking and signatures. Therefore, the decorator can be used to find the wanted trade-off between detailed static
+    API and boilerplate/maintenance costs.
+    Finally, it must be noted that the decorator needs to check the list of variables and parameters, hence it breaks
+    late initialization by accessing late-initialized class properties before at import time.
     """
 
     def __call__(self, target) -> Any:

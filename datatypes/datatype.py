@@ -1,5 +1,27 @@
 from dataclasses import dataclass, field
-from typing import Optional
+from typing import Optional, Dict, Any
+
+from utils.strings import stringify
+
+
+@dataclass(frozen=True)
+class Sample:
+    """Basic dataclass representing a benchmark sample, which contains inputs and output values."""
+
+    inputs: Dict[str, Any]
+    """The dictionary of input variables and parameters."""
+
+    output: Any
+    """The output object, which can be of any type."""
+
+    def __getitem__(self, key):
+        match key:
+            case 0 | 'inputs':
+                return self.inputs
+            case 1 | 'output':
+                return self.output
+            case _:
+                raise IndexError(f"Sample instances admit keys [0, 1, 'inputs', 'output'], got {stringify(key)}'")
 
 
 @dataclass(repr=False, frozen=True)

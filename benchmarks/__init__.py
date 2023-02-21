@@ -1,26 +1,14 @@
 import re
 from abc import abstractmethod, ABC
-from dataclasses import dataclass
 from typing import Optional, Any, Dict, List
 
 import dill
 import numpy as np
-import pandas as pd
 from descriptors import classproperty, cachedclassproperty
 
-from datatypes import Variable, Parameter, Constraint, DataType
+from datatypes import Variable, Parameter, Constraint, DataType, Sample
+from datatypes.metrics import Metric
 from utils.strings import stringify
-
-
-@dataclass
-class Sample:
-    """Basic dataclass representing a benchmark sample, which contains inputs and output values."""
-
-    inputs: Dict[str, Any]
-    """The dictionary of input variables and parameters."""
-
-    output: Any
-    """The output object, which can be of any type."""
 
 
 class Benchmark(ABC):
@@ -28,14 +16,12 @@ class Benchmark(ABC):
 
     # BENCHMARK-SPECIFIC PROPERTIES AND OPERATIONS
     #   - these properties and operations must be overridden by each benchmark child class
-    #   - properties are defined leveraging the @classproperties decorator in order to allow for late initialization,
-    #     as they are called just once by the shared properties and operations where they are post-processed and
-    #     eventually stored leveraging the @cachedclassproperty decorator; if late initialization is not an issue,
-    #     there is always the possibility to define them as static fields, in which case they will be used once as if
-    #     they were properties but they will be stored at class level
+    #   - the '_structure' property is not formally defined as such but as a function to allow for late initialization,
+    #     still, it can be seen as a property '_structure: Callable[[], List[DataType]]' thus defined with via a
+    #     non-parametric lambda if preferred
+    @staticmethod
     @abstractmethod
-    @classproperty
-    def _structure(self) -> List[DataType]:
+    def _structure() -> List[DataType]:
         """Defines the structure of a benchmark.
 
         :return:
@@ -65,23 +51,35 @@ class Benchmark(ABC):
         """Calls the benchmark-specific '_structure' property once and unpacks it in a cached structure dictionary.
         Additionally, it checks benchmark consistency."""
         # retrieve benchmark-specific structure
-        structure = self._structure
+        structure = self._structure()
         # check for the presence of at least one variable and no name clashes
         names = sorted([obj.name for obj in structure])
         assert np.any([isinstance(obj, Variable) for obj in structure]), "Benchmarks should have at least one variable"
         for n1, n2 in zip(names[:-1], names[1:]):
             assert n1 != n2, f"Data types cannot have duplicate names, got duplicate name '{n1}'"
-        # build and return the unpacked structure to cache
+        # retrieve alias from class name
+        alias = ' '.join(re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', self.__name__)).split())
+        # retrieve description from docstring
         docstring = self.__doc__.strip().split('\n')
         min_tab = np.min([len(line) - len(line.lstrip()) for line in docstring[1:] if line != ''])
         docstring[1:] = [line[min_tab:] for line in docstring[1:]]
-        return dict(
-            alias=' '.join(re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', self.__name__)).split()),
-            description='\n'.join(docstring),
-            variables={v.name: v for v in self._structure if isinstance(v, Variable)},
-            parameters={p.name: p for p in self._structure if isinstance(p, Parameter)},
-            constraints={c.name: c for c in self._structure if isinstance(c, Constraint)},
-        )
+        description = '\n'.join(docstring)
+        # retrieve objects from structure
+        objects = {namespace: dict() for namespace in ['variables', 'parameters', 'constraints', 'metrics']}
+        for obj in structure:
+            match obj:
+                case Variable():
+                    namespace = 'variables'
+                case Parameter():
+                    namespace = 'parameters'
+                case Constraint():
+                    namespace = 'constraints'
+                case Metric():
+                    namespace = 'metrics'
+                case _:
+                    raise AssertionError(f"Unsupported object type {type(obj).__name__} in benchmark structure")
+            objects[namespace][obj.name] = obj
+        return {'alias': alias, 'description': description, **objects}
 
     @classproperty
     def alias(self) -> str:
@@ -107,6 +105,11 @@ class Benchmark(ABC):
     def constraints(self):
         """The benchmark constraints."""
         return self._unpacked_structure['constraints']
+
+    @classproperty
+    def metrics(self):
+        """The benchmark metrics."""
+        return self._unpacked_structure['metrics']
 
     @classmethod
     def describe(cls, brief: bool = True) -> str:
@@ -167,6 +170,9 @@ class Benchmark(ABC):
 
     # INSTANCE PROPERTIES AND OPERATIONS
     #   - instance properties and operations are those defined by the end users rather than the benchmark developers
+    #   - the '__init__' and 'query' operations are capable of handling any tipe of input, still it could be beneficial
+    #     for the user to re-define them by adding the benchmark-specific parameters in order to allow for IDE hints,
+    #     autocompletion, and static type checking
     def __init__(self, name: Optional[str] = None, seed: int = 42, **configuration):
         """
         :param name:
@@ -178,14 +184,14 @@ class Benchmark(ABC):
         :param configuration:
             The benchmark-specific parameter values. If a parameter is not explicitly passed, its default value is used.
         """
+        self._rng: Any = np.random.default_rng(seed=seed)
+        """The random number generator to be used for (internal only) random operations."""
+
         self.name: str = self.alias.lower() if name is None else name
         """The name of the benchmark instance."""
 
         self.seed: int = seed
         """The seed for random operations."""
-
-        self.rng: Any = np.random.default_rng(seed=seed)
-        """The random number generator for random operations."""
 
         self.samples: List[Sample] = []
         """The list of samples <inputs, output> obtained by querying the 'evaluate' function."""
@@ -240,6 +246,12 @@ class Benchmark(ABC):
         output = self._query(**inputs, **self.configuration)
         self.samples.append(Sample(inputs=inputs, output=output))
         return output
+
+    # def evaluate(self, sample: Optional[Sample] = None) -> pd.Series:
+    #     if sample is None:
+    #         assert len(self.samples) > 0, "No samples to evaluate in the benchmark history"
+    #         sample = self.samples[-1]
+    #     metrics = {m for m in self}
 
     def serialize(self, filepath: str):
         """Dumps the benchmark configuration into a dill file.

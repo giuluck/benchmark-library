@@ -1,7 +1,7 @@
 import inspect
 from abc import abstractmethod, ABC
 from dataclasses import dataclass, field
-from typing import Dict, Any, Callable
+from typing import Any, Callable
 
 from datatypes.datatype import DataType
 
@@ -25,7 +25,9 @@ class Constraint(DataType, ABC):
 
 # noinspection PyDataclass
 @dataclass(repr=False, frozen=True)
-class CustomConstraint(Constraint):
+class GenericConstraint(Constraint):
+    """A constraint with custom function."""
+
     satisfied_fn: Callable = field(kw_only=True)
     """A function f(...) -> bool which checks if the global constraint is satisfied. The input parameters must match
     the names of either the benchmark variables or the benchmark parameters."""
