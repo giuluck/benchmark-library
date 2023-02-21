@@ -1,8 +1,9 @@
 import numpy as np
 import pandas as pd
+from descriptors import classproperty
 from scipy.integrate import odeint
 
-from benchmarks.benchmark import Benchmark
+from benchmarks import Benchmark
 from datatypes.constraints import CustomConstraint
 from datatypes.parameters import NumericParameter
 from datatypes.variables import PositiveVariable
@@ -22,25 +23,24 @@ class SIR(Benchmark):
     with N being the total population size, and 𝛽 and 𝛾 the infection and recovery rate, respectively.
     """
 
-    _variables = [
-        PositiveVariable('s0', description='the percentage of initial susceptibles'),
-        PositiveVariable('i0', description='the percentage of initial infected'),
-        PositiveVariable('r0', description='the percentage of initial recovered'),
-        PositiveVariable('beta', strict=True, description='the infection rate'),
-        PositiveVariable('gamma', strict=True, description='the recovery rate')
-    ]
-
-    _parameters = [
-        NumericParameter('horizon', default=300, lb=1, integer=True, description='the time horizon of the simulation')
-    ]
-
-    _constraints = [
-        CustomConstraint(
-            name='percentage',
-            satisfied_fn=lambda s0, i0, r0: s0 + i0 + r0 == 1,
-            description='the percentages of initial susceptibles, infected, and recovered must sum up to one'
-        )
-    ]
+    @classproperty
+    def _structure(self):
+        return [
+            # variables
+            PositiveVariable('s0', description='the percentage of initial susceptibles'),
+            PositiveVariable('i0', description='the percentage of initial infected'),
+            PositiveVariable('r0', description='the percentage of initial recovered'),
+            PositiveVariable('beta', strict=True, description='the infection rate'),
+            PositiveVariable('gamma', strict=True, description='the recovery rate'),
+            # parameter
+            NumericParameter('horizon', default=300, lb=1, integer=True, description='the timespan of the simulation'),
+            # constraint
+            CustomConstraint(
+                name='percentage',
+                satisfied_fn=lambda s0, i0, r0: s0 + i0 + r0 == 1,
+                description='the percentages of susceptibles, infected, and recovered must sum up to one'
+            )
+        ]
 
     @staticmethod
     def _query(s0, i0, r0, beta, gamma, horizon):
@@ -81,27 +81,26 @@ class SEIR(Benchmark):
     with N being the total population size, and 𝛽 and 𝛾 the infection and recovery rate, respectively.
     """
 
-    _variables = [
-        PositiveVariable('s0', description='the percentage of initial susceptibles'),
-        PositiveVariable('e0', description='the percentage of initial exposed'),
-        PositiveVariable('i0', description='the percentage of initial infected'),
-        PositiveVariable('r0', description='the percentage of initial recovered'),
-        PositiveVariable('beta', strict=True, description='the infection rate'),
-        PositiveVariable('gamma', strict=True, description='the recovery rate'),
-        PositiveVariable('latency', strict=True, description='the exposition latency period')
-    ]
-
-    _parameters = [
-        NumericParameter('horizon', default=300, lb=1, integer=True, description='the time horizon of the simulation')
-    ]
-
-    _constraints = [
-        CustomConstraint(
-            name='percentage',
-            satisfied_fn=lambda s0, e0, i0, r0: s0 + e0 + i0 + r0 == 1,
-            description='the percentages of initial susceptibles, exposed, infected, and recovered must sum up to one'
-        )
-    ]
+    @classproperty
+    def _structure(self):
+        return [
+            # variables
+            PositiveVariable('s0', description='the percentage of initial susceptibles'),
+            PositiveVariable('e0', description='the percentage of initial exposed'),
+            PositiveVariable('i0', description='the percentage of initial infected'),
+            PositiveVariable('r0', description='the percentage of initial recovered'),
+            PositiveVariable('beta', strict=True, description='the infection rate'),
+            PositiveVariable('gamma', strict=True, description='the recovery rate'),
+            PositiveVariable('latency', strict=True, description='the exposition latency period'),
+            # parameters
+            NumericParameter('horizon', default=300, lb=1, integer=True, description='the timespan of the simulation'),
+            # constraints
+            CustomConstraint(
+                name='percentage',
+                satisfied_fn=lambda s0, e0, i0, r0: s0 + e0 + i0 + r0 == 1,
+                description='the percentages of susceptibles, exposed, infected, and recovered must sum up to one'
+            )
+        ]
 
     @staticmethod
     def _query(s0, e0, i0, r0, beta, gamma, latency, horizon):

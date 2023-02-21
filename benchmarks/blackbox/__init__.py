@@ -1,6 +1,7 @@
 import numpy as np
+from descriptors import classproperty
 
-from benchmarks.benchmark import Benchmark
+from benchmarks import Benchmark
 from datatypes.constraints import CustomConstraint
 from datatypes.parameters import NumericParameter
 from datatypes.variables import CustomVariable
@@ -23,24 +24,23 @@ class Ackley(Benchmark):
     The function has its minimum in f(0, ..., 0) = 0.
     """
 
-    _variables = [
-        CustomVariable('x', dtype=list, description="the input vector")
-    ]
-
-    _parameters = [
-        NumericParameter('a', default=20., description="the Ackley function 'a' parameter"),
-        NumericParameter('b', default=0.2, description="the Ackley function 'b' parameter"),
-        NumericParameter('c', default=2 * np.pi, description="the Ackley function 'c' parameter"),
-        NumericParameter('dim', default=1, integer=True, lb=1, description="the input vector dimension")
-    ]
-
-    _constraints = [
-        CustomConstraint(
-            name='input_dim',
-            satisfied_fn=lambda x, dim: len(x) == dim,
-            description=f"the input vector should have the correct input dimension 'dim'"
-        )
-    ]
+    @classproperty
+    def _structure(self):
+        return [
+            # variables
+            CustomVariable('x', dtype=list, description="the input vector"),
+            # parameters
+            NumericParameter('a', default=20., description="the Ackley function 'a' parameter"),
+            NumericParameter('b', default=0.2, description="the Ackley function 'b' parameter"),
+            NumericParameter('c', default=2 * np.pi, description="the Ackley function 'c' parameter"),
+            NumericParameter('dim', default=1, integer=True, lb=1, description="the input vector dimension"),
+            # constraints
+            CustomConstraint(
+                name='input_dim',
+                satisfied_fn=lambda x, dim: len(x) == dim,
+                description=f"the input vector should have the correct input dimension 'dim'"
+            )
+        ]
 
     @staticmethod
     def _query(x, a, b, c, dim):
@@ -73,22 +73,21 @@ class Rosenbrock(Benchmark):
     The function has its minimum in f(1, ..., 1) = 0.
     """
 
-    _variables = [
-        CustomVariable('x', dtype=list, description="the input vector")
-    ]
-
-    _parameters = [
-        NumericParameter('b', default=100., description="the Rosenbrock function 'b' parameter"),
-        NumericParameter('dim', default=2, integer=True, lb=2, description="the input vector dimension")
-    ]
-
-    _constraints = [
-        CustomConstraint(
-            name='input_dim',
-            satisfied_fn=lambda x, dim: len(x) == dim,
-            description=f"the input vector should have the correct input dimension 'dim'"
-        )
-    ]
+    @classproperty
+    def _structure(self):
+        return [
+            # variables
+            CustomVariable('x', dtype=list, description="the input vector"),
+            # parameters
+            NumericParameter('b', default=100., description="the Rosenbrock function 'b' parameter"),
+            NumericParameter('dim', default=2, integer=True, lb=2, description="the input vector dimension"),
+            # constraints
+            CustomConstraint(
+                name='input_dim',
+                satisfied_fn=lambda x, dim: len(x) == dim,
+                description=f"the input vector should have the correct input dimension 'dim'"
+            )
+        ]
 
     @staticmethod
     def _query(x, b, dim):

@@ -1,5 +1,5 @@
 from abc import ABC
-from dataclasses import dataclass, field
+from dataclasses import dataclass
 
 from datatypes.values import Value, NumericValue, CategoricalValue, PositiveValue, NegativeValue, ThresholdValue, \
     BinaryValue, CustomValue
@@ -8,9 +8,6 @@ from datatypes.values import Value, NumericValue, CategoricalValue, PositiveValu
 @dataclass(repr=False, frozen=True)
 class Variable(Value, ABC):
     """Abstract template for a Variable."""
-
-    assignments: list = field(default_factory=list, init=False)
-    """The list of value assignments that were taken by the variable during subsequent evaluation calls."""
 
 
 @dataclass(repr=False, frozen=True)

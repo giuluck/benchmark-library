@@ -17,8 +17,8 @@ class Parameter(Value, ABC):
 
     def __post_init__(self):
         name, dtype, in_domain, domain, default = self.name, self.dtype, self.in_domain, self.domain, self.default
-        assert isinstance(default, dtype), f"'{name}' should be of type {stringify(dtype)}, got " \
-                                           f"default value {stringify(default)} of type {stringify(type(default))}"
+        assert isinstance(default, dtype), f"'{name}' should be of type {dtype.__name__}, got " \
+                                           f"default value {stringify(default)} of type {type(default).__name__}"
         assert in_domain(default), f"'{name}' domain is {domain}, got default value {default}"
 
 

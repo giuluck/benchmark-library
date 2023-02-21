@@ -2,7 +2,7 @@ import inspect
 from inspect import Parameter
 from typing import Any
 
-from benchmarks.benchmark import Benchmark
+from benchmarks import Benchmark
 
 
 class BenchmarkDecorator:
@@ -27,7 +27,7 @@ class BenchmarkDecorator:
 
         # change __init__ method signature and default values by adding benchmark parameters to base class ones
         signature = inspect.signature(Benchmark.__init__)
-        parameters = [v for k, v in signature.parameters.items() if k != 'config']
+        parameters = [v for k, v in signature.parameters.items() if k != 'configuration']
         parameters += [_parameter(p) for p in target.parameters.values()]
         target.__init__.__signature__ = signature.replace(parameters=parameters)
         target.__init__.__defaults__ = tuple([p.default for p in parameters if p.default is not Parameter.empty])
