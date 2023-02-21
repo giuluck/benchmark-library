@@ -2,7 +2,8 @@ from abc import ABC, abstractmethod
 from dataclasses import dataclass, field
 from typing import Callable, Any, Dict
 
-from descriptors import classproperty, cachedproperty
+import numpy as np
+from descriptors import classproperty
 from sklearn.metrics import log_loss, r2_score, mean_squared_error, mean_absolute_error, recall_score, \
     precision_score, f1_score, accuracy_score, roc_auc_score
 
@@ -62,15 +63,15 @@ class ReferenceMetric(ValueMetric):
     def aliases(self) -> Dict[str, Callable[[Any, Any], float]]:
         """The supported metric aliases with their respective metric functions."""
         return dict(
-            mae=mean_absolute_error,
-            mse=mean_squared_error,
-            r2=r2_score,
-            crossentropy=log_loss,
-            precision=precision_score,
-            recall=recall_score,
-            f1=f1_score,
-            accuracy=accuracy_score,
-            auc=roc_auc_score
+            mae=lambda reference, value: mean_absolute_error(np.atleast_1d(reference), np.atleast_1d(value)),
+            mse=lambda reference, value: mean_squared_error(np.atleast_1d(reference), np.atleast_1d(value)),
+            r2=lambda reference, value: r2_score(np.atleast_1d(reference), np.atleast_1d(value)),
+            crossentropy=lambda reference, value: log_loss(np.atleast_1d(reference), np.atleast_1d(value)),
+            precision=lambda reference, value: precision_score(np.atleast_1d(reference), np.atleast_1d(value)),
+            recall=lambda reference, value: recall_score(np.atleast_1d(reference), np.atleast_1d(value)),
+            f1=lambda reference, value: f1_score(np.atleast_1d(reference), np.atleast_1d(value)),
+            accuracy=lambda reference, value: accuracy_score(np.atleast_1d(reference), np.atleast_1d(value)),
+            auc=lambda reference, value: roc_auc_score(np.atleast_1d(reference), np.atleast_1d(value))
         )
 
     metric: str | Callable[[Any, Any], float] = field(kw_only=True)
@@ -82,7 +83,11 @@ class ReferenceMetric(ValueMetric):
     # redeclare 'metric_fn' as a property to match 'metric'
     metric_fn: Callable[[Any], float] = field(init=False)
 
-    @cachedproperty
+    @property
     def metric_fn(self) -> Callable[[Any], float]:
         metric = self.aliases.get(self.metric) if isinstance(self.metric, str) else self.metric
         return lambda value: metric(self.reference, value)
+
+    @metric_fn.setter
+    def metric_fn(self, value):
+        pass

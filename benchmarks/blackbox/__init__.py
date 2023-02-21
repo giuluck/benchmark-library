@@ -36,7 +36,7 @@ class Ackley(Benchmark):
         GenericConstraint(
             name='input_dim',
             satisfied_fn=lambda x, dim: len(x) == dim,
-            description=f"the input vector should have the correct input dimension 'dim'"
+            description="the input vector should have the correct input dimension 'dim'"
         ),
         # metrics
         ReferenceMetric(
@@ -93,12 +93,12 @@ class Rosenbrock(Benchmark):
         GenericConstraint(
             name='input_dim',
             satisfied_fn=lambda x, dim: len(x) == dim,
-            description=f"the input vector should have the correct input dimension 'dim'"
+            description="the input vector should have the correct input dimension 'dim'"
         ),
         # metrics
         ReferenceMetric(
             name='gap',
-            metric='mae',
+            metric=lambda ref, out: out - ref,
             reference=0.0,
             description='absolute gap from the optimum'
         )

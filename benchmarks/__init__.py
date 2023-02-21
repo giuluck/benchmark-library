@@ -3,7 +3,9 @@ from abc import abstractmethod, ABC
 from typing import Optional, Any, Dict, List
 
 import dill
+import matplotlib.pyplot as plt
 import numpy as np
+import pandas as pd
 from descriptors import classproperty, cachedclassproperty
 
 from datatypes import Variable, Parameter, Constraint, DataType, Sample
@@ -102,12 +104,12 @@ class Benchmark(ABC):
         return self._unpacked_structure['parameters']
 
     @classproperty
-    def constraints(self):
+    def constraints(self) -> Dict[str, Constraint]:
         """The benchmark constraints."""
         return self._unpacked_structure['constraints']
 
     @classproperty
-    def metrics(self):
+    def metrics(self) -> Dict[str, Metric]:
         """The benchmark metrics."""
         return self._unpacked_structure['metrics']
 
@@ -247,11 +249,45 @@ class Benchmark(ABC):
         self.samples.append(Sample(inputs=inputs, output=output))
         return output
 
-    # def evaluate(self, sample: Optional[Sample] = None) -> pd.Series:
-    #     if sample is None:
-    #         assert len(self.samples) > 0, "No samples to evaluate in the benchmark history"
-    #         sample = self.samples[-1]
-    #     metrics = {m for m in self}
+    def evaluate(self, sample: Optional[Sample] = None) -> pd.Series:
+        """Computes all the benchmark metrics on the given sample.
+
+        :param sample:
+            Either a sample instance, or None to compute the metrics on the last queried sample.
+
+        :return:
+            A Series object where each metric (name) is associated to its computed value.
+        """
+        if sample is None:
+            assert len(self.samples) > 0, "No samples to evaluate in the benchmark history"
+            sample = self.samples[-1]
+        metrics = {name: metric(sample) for name, metric in self.metrics.items()}
+        return pd.Series(metrics)
+
+    def history(self, plot: bool | Dict[str, Any] = False) -> pd.DataFrame:
+        """Evaluates all the queried samples and optionally plot their values.
+
+        :param plot:
+            Either a boolean stating whether or not to plot the metrics history, or a dictionary of parameters to be
+            passed to the plt.figure() method. Each metric is plotted in a different figure.
+
+        :return:
+            A dataframe where each column represents a metric, and each row a queried sample.
+        """
+        history = pd.DataFrame([self.evaluate(sample) for sample in self.samples])
+        plot = dict(figsize=(16, 9), tight_layout=True) if plot is True else plot
+        if isinstance(plot, dict):
+            index = history.index + 1
+            for name, metric in self.metrics.items():
+                plt.figure(**plot)
+                plt.plot(index, history[name])
+                plt.title(metric.description.title() if metric.description is not None else name.title())
+                ticks = np.array([int(tick) for tick in plt.xticks()[0] if 0 < int(tick) <= len(index)])
+                plt.xticks(ticks - ticks[0] // 2)
+                plt.xlim(0, len(index) + 1)
+                plt.ylabel(name)
+                plt.show()
+        return history
 
     def serialize(self, filepath: str):
         """Dumps the benchmark configuration into a dill file.
