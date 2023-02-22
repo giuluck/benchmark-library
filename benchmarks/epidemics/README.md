@@ -13,11 +13,11 @@ In both cases, classical formulations based on continuous variables and differen
 ## SIR Model
 
 In the case of the SIR model, the epidemics behavior is defined via the following Ordinary Differential Equation:
-\begin{align}
+$\begin{align}
 \frac{dS}{dt} & = - \beta S I \\
 \frac{dI}{dt} & = \beta S I - \gamma I\\
 \frac{dR}{dt} & = \gamma I
-\end{align}
+\end{align}$$
 where $S$, $I$, $R$ represent the amount of population that are respectively susceptible, infected, and have recovered from the epidemic agent.
 The benchmark assumes that the population is normalized, i.e. the code explicitly checks whether $S + I + R = 1$.
 The parameter $\beta$ represents the infection rate and $\gamma$ is the recovery rate.
