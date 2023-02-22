@@ -172,7 +172,7 @@ class Benchmark(ABC):
 
     # INSTANCE PROPERTIES AND OPERATIONS
     #   - instance properties and operations are those defined by the end users rather than the benchmark developers
-    #   - the '__init__' and 'query' operations are capable of handling any tipe of input, still it could be beneficial
+    #   - the '__init__' and 'query' operations are capable of handling any type of input, still it could be beneficial
     #     for the user to re-define them by adding the benchmark-specific parameters in order to allow for IDE hints,
     #     autocompletion, and static type checking
     def __init__(self, name: Optional[str] = None, seed: int = 42, **configuration):
@@ -242,8 +242,9 @@ class Benchmark(ABC):
         assert len(variables) == 0, f"No value was provided for parameters {list(variables.keys())}"
         # check global constraints feasibility
         for name, constraint in self.constraints.items():
-            msg = f"{constraint.description.capitalize()}; global constraint '{constraint.name}' not satisfied"
-            assert constraint.is_satisfied(**inputs, **self.configuration), msg
+            desc = "" if constraint.description is None else f"{constraint.description}; "
+            msg = f"{desc}global constraint '{constraint.name}' not satisfied"
+            assert constraint.is_satisfied(**inputs, **self.configuration), msg.capitalize()
         # evaluate the function, store the results, and eventually return the output
         output = self._query(**inputs, **self.configuration)
         self.samples.append(Sample(inputs=inputs, output=output))
