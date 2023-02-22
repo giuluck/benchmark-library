@@ -15,7 +15,9 @@ In both cases, classical formulations based on continuous variables and differen
 In the case of the SIR model, the epidemics behavior is defined via the following Ordinary Differential Equation:
 
 $$\frac{dS}{dt} = - \beta S I$$
+
 $$\frac{dI}{dt} = \beta S I - \gamma I$$
+
 $$\frac{dR}{dt} = \gamma I$$
 
 where $S$, $I$, $R$ represent the amount of population that are respectively susceptible, infected, and have recovered from the epidemic agent.
