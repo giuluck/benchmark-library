@@ -4,11 +4,7 @@ import numpy as np
 from pandas import DataFrame
 from scipy.integrate import odeint
 
-from benchmarks import Benchmark
-from datatypes.constraints import GenericConstraint
-from datatypes.metrics import ValueMetric
-from datatypes.parameters import NumericParameter
-from datatypes.variables import PositiveVariable
+from model import Benchmark, Structure
 
 
 class SIR(Benchmark):
@@ -23,38 +19,41 @@ class SIR(Benchmark):
     with N being the total population size, and 𝛽 and 𝛾 the infection and recovery rate, respectively.
     """
 
-    _structure = lambda: [
+    @staticmethod
+    def _build(structure: Structure):
         # variables
-        PositiveVariable('s0', description='the percentage of initial susceptibles'),
-        PositiveVariable('i0', description='the percentage of initial infected'),
-        PositiveVariable('r0', description='the percentage of initial recovered'),
-        PositiveVariable('beta', strict=True, description='the infection rate'),
-        PositiveVariable('gamma', strict=True, description='the recovery rate'),
+        structure.add_positive_variable('s0', description='the percentage of initial susceptibles')
+        structure.add_positive_variable('i0', description='the percentage of initial infected')
+        structure.add_positive_variable('r0', description='the percentage of initial recovered')
+        structure.add_positive_variable('beta', strict=True, description='the infection rate')
+        structure.add_positive_variable('gamma', strict=True, description='the recovery rate')
         # parameter
-        NumericParameter('horizon', default=300, lb=1, integer=True, description='the timespan of the simulation'),
+        structure.add_positive_parameter(
+            name='horizon',
+            default=300,
+            strict=True, integer=True, description='the timespan of the simulation')
         # constraint
-        GenericConstraint(
+        structure.add_generic_constraint(
             name='percentage',
-            satisfied_fn=lambda s0, i0, r0: s0 + i0 + r0 == 1,
+            check=lambda s0, i0, r0: s0 + i0 + r0 == 1,
             description='the percentages of susceptibles, infected, and recovered must sum up to one'
-        ),
+        )
         # metrics
-        ValueMetric(
+        structure.add_value_metric(
             name='susceptibles',
-            metric_fn=lambda out: out['S'].iloc[-1],
+            function=lambda out: out['S'].iloc[-1],
             description='number of final susceptibles'
-        ),
-        ValueMetric(
+        )
+        structure.add_value_metric(
             name='infected',
-            metric_fn=lambda out: out['I'].iloc[-1],
+            function=lambda out: out['I'].iloc[-1],
             description='number of final infected'
-        ),
-        ValueMetric(
+        )
+        structure.add_value_metric(
             name='recovered',
-            metric_fn=lambda out: out['R'].iloc[-1],
+            function=lambda out: out['R'].iloc[-1],
             description='number of final recovered'
         )
-    ]
 
     @staticmethod
     def _query(s0, i0, r0, beta, gamma, horizon):
@@ -94,45 +93,48 @@ class SEIR(Benchmark):
     with N being the total population size, and 𝛽 and 𝛾 the infection and recovery rate, respectively.
     """
 
-    _structure = lambda: [
+    @staticmethod
+    def _build(structure: Structure):
         # variables
-        PositiveVariable('s0', description='the percentage of initial susceptibles'),
-        PositiveVariable('e0', description='the percentage of initial exposed'),
-        PositiveVariable('i0', description='the percentage of initial infected'),
-        PositiveVariable('r0', description='the percentage of initial recovered'),
-        PositiveVariable('beta', strict=True, description='the infection rate'),
-        PositiveVariable('gamma', strict=True, description='the recovery rate'),
-        PositiveVariable('latency', strict=True, description='the exposition latency period'),
-        # parameters
-        NumericParameter('horizon', default=300, lb=1, integer=True, description='the timespan of the simulation'),
-        # constraints
-        GenericConstraint(
+        structure.add_positive_variable('s0', description='the percentage of initial susceptibles')
+        structure.add_positive_variable('e0', description='the percentage of initial exposed')
+        structure.add_positive_variable('i0', description='the percentage of initial infected')
+        structure.add_positive_variable('r0', description='the percentage of initial recovered')
+        structure.add_positive_variable('beta', strict=True, description='the infection rate')
+        structure.add_positive_variable('gamma', strict=True, description='the recovery rate')
+        structure.add_positive_variable('latency', strict=True, description='the exposition latency period'),
+        # parameter
+        structure.add_positive_parameter(
+            name='horizon',
+            default=300,
+            strict=True, integer=True, description='the timespan of the simulation')
+        # constraint
+        structure.add_generic_constraint(
             name='percentage',
-            satisfied_fn=lambda s0, e0, i0, r0: s0 + e0 + i0 + r0 == 1,
+            check=lambda s0, e0, i0, r0: s0 + e0 + i0 + r0 == 1,
             description='the percentages of susceptibles, exposed, infected, and recovered must sum up to one'
-        ),
+        )
         # metrics
-        ValueMetric(
+        structure.add_value_metric(
             name='susceptibles',
-            metric_fn=lambda out: out['S'].iloc[-1],
+            function=lambda out: out['S'].iloc[-1],
             description='number of final susceptibles'
-        ),
-        ValueMetric(
+        )
+        structure.add_value_metric(
             name='exposed',
-            metric_fn=lambda out: out['E'].iloc[-1],
+            function=lambda out: out['E'].iloc[-1],
             description='number of final Exposed'
-        ),
-        ValueMetric(
+        )
+        structure.add_value_metric(
             name='infected',
-            metric_fn=lambda out: out['I'].iloc[-1],
+            function=lambda out: out['I'].iloc[-1],
             description='number of final infected'
-        ),
-        ValueMetric(
+        )
+        structure.add_value_metric(
             name='recovered',
-            metric_fn=lambda out: out['R'].iloc[-1],
+            function=lambda out: out['R'].iloc[-1],
             description='number of final recovered'
         )
-    ]
 
     @staticmethod
     def _query(s0, e0, i0, r0, beta, gamma, latency, horizon):

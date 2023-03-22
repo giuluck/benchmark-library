@@ -2,11 +2,7 @@ from typing import Optional
 
 import numpy as np
 
-from benchmarks import Benchmark
-from datatypes.constraints import GenericConstraint
-from datatypes.metrics import ReferenceMetric
-from datatypes.parameters import NumericParameter
-from datatypes.variables import CustomVariable
+from model import Benchmark, Structure
 
 
 class Ackley(Benchmark):
@@ -24,28 +20,28 @@ class Ackley(Benchmark):
     The function has its minimum in f(0, ..., 0) = 0.
     """
 
-    _structure = lambda: [
+    @staticmethod
+    def _build(structure: Structure):
         # variables
-        CustomVariable('x', dtype=list, description="the input vector"),
+        structure.add_custom_variable('x', dtype=list, description="the input vector")
         # parameters
-        NumericParameter('a', default=20., description="the Ackley function 'a' parameter"),
-        NumericParameter('b', default=0.2, description="the Ackley function 'b' parameter"),
-        NumericParameter('c', default=2 * np.pi, description="the Ackley function 'c' parameter"),
-        NumericParameter('dim', default=1, integer=True, lb=1, description="the input vector dimension"),
+        structure.add_numeric_parameter('a', default=20, description="the Ackley function 'a' parameter")
+        structure.add_numeric_parameter('b', default=0.2, description="the Ackley function 'b' parameter")
+        structure.add_numeric_parameter('c', default=2 * np.pi, description="the Ackley function 'c' parameter")
+        structure.add_numeric_parameter('dim', default=1, integer=True, lb=1, description="the input vector dimension")
         # constraints
-        GenericConstraint(
+        structure.add_generic_constraint(
             name='input_dim',
-            satisfied_fn=lambda x, dim: len(x) == dim,
+            check=lambda x, dim: len(x) == dim,
             description="the input vector should have the correct input dimension 'dim'"
-        ),
+        )
         # metrics
-        ReferenceMetric(
+        structure.add_reference_metric(
             name='gap',
             metric='mae',
             reference=0.0,
             description='absolute gap from the optimum'
         )
-    ]
 
     @staticmethod
     def _query(x, a, b, c, dim):
@@ -57,7 +53,7 @@ class Ackley(Benchmark):
     def __init__(self,
                  name: Optional[str] = None,
                  seed: int = 42,
-                 a: float = 20.,
+                 a: float = 20,
                  b: float = 0.2,
                  c: float = 2 * np.pi,
                  dim: int = 1):
@@ -83,26 +79,26 @@ class Rosenbrock(Benchmark):
     The function has its minimum in f(1, ..., 1) = 0.
     """
 
-    _structure = lambda: [
+    @staticmethod
+    def _build(structure: Structure):
         # variables
-        CustomVariable('x', dtype=list, description="the input vector"),
+        structure.add_custom_variable('x', dtype=list, description="the input vector")
         # parameters
-        NumericParameter('b', default=100., description="the Rosenbrock function 'b' parameter"),
-        NumericParameter('dim', default=2, integer=True, lb=2, description="the input vector dimension"),
+        structure.add_numeric_parameter('b', default=100, description="the Rosenbrock function 'b' parameter")
+        structure.add_numeric_parameter('dim', default=2, lb=2, integer=True, description="the input vector dimension")
         # constraints
-        GenericConstraint(
+        structure.add_generic_constraint(
             name='input_dim',
-            satisfied_fn=lambda x, dim: len(x) == dim,
+            check=lambda x, dim: len(x) == dim,
             description="the input vector should have the correct input dimension 'dim'"
         ),
         # metrics
-        ReferenceMetric(
+        structure.add_reference_metric(
             name='gap',
             metric=lambda ref, out: out - ref,
             reference=0.0,
             description='absolute gap from the optimum'
         )
-    ]
 
     @staticmethod
     def _query(x, b, dim):
@@ -114,8 +110,8 @@ class Rosenbrock(Benchmark):
     def __init__(self,
                  name: Optional[str] = None,
                  seed: int = 42,
-                 b: float = 100.,
-                 dim: int = 1):
+                 b: float = 100,
+                 dim: int = 2):
         super(Rosenbrock, self).__init__(name=name, seed=seed, b=b, dim=dim)
 
     def query(self, x: list) -> np.ndarray:
