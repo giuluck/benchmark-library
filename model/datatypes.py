@@ -1,5 +1,6 @@
+import inspect
 from dataclasses import dataclass, field
-from typing import Dict, Any
+from typing import Dict, Any, List
 from typing import Optional, Callable
 
 from model.utils import stringify
@@ -90,12 +91,15 @@ class Constraint(DataType):
     check: Callable[..., bool] = field(kw_only=True)
     """Checks if the global constraint is satisfied given the input values of variables and parameters."""
 
+    @property
+    def inputs(self) -> List[str]:
+        """The names of the input variables/parameters involved in the constraint."""
+        return list(inspect.signature(self.check).parameters.keys())
+
 
 @dataclass(frozen=True, repr=False)
 class Metric(DataType):
     """A benchmark metric."""
 
-    function: Callable[[Sample], float] = field()
-
-    def __call__(self, sample: Sample) -> float:
-        return self.function(sample)
+    evaluate: Callable[[Sample], float] = field(kw_only=True)
+    """Evaluates the given sample according to the metric."""

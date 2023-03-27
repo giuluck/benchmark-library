@@ -2,7 +2,7 @@ from typing import Optional
 
 import numpy as np
 
-from model import Benchmark, Structure
+from model import Benchmark, Structure, querymethod
 
 
 class Ackley(Benchmark):
@@ -21,7 +21,7 @@ class Ackley(Benchmark):
     """
 
     @staticmethod
-    def _build(structure: Structure):
+    def build(structure: Structure):
         # variables
         structure.add_custom_variable('x', dtype=list, description="the input vector")
         # parameters
@@ -43,24 +43,31 @@ class Ackley(Benchmark):
             description='absolute gap from the optimum'
         )
 
-    @staticmethod
-    def _query(x, a, b, c, dim):
+    @querymethod
+    def query(self, x: list) -> float:
         x = np.array(x)
-        term1 = a * np.exp(-b * np.sqrt(np.sum(x ** 2) / dim))
-        term2 = np.exp(np.sum(np.cos(c * x)) / dim)
-        return term1 + term2 - a - np.e
+        term1 = self.a * np.exp(-self.b * np.sqrt(np.sum(x ** 2) / self.dim))
+        term2 = np.exp(np.sum(np.cos(self.c * x)) / self.dim)
+        return term1 + term2 - self.a - np.e
 
-    def __init__(self,
-                 name: Optional[str] = None,
-                 seed: int = 42,
-                 a: float = 20,
-                 b: float = 0.2,
-                 c: float = 2 * np.pi,
-                 dim: int = 1):
-        super(Ackley, self).__init__(name=name, seed=seed, a=a, b=b, c=c, dim=dim)
+    def __init__(self, name: Optional[str] = None, a: float = 20, b: float = 0.2, c: float = 2 * np.pi, dim: int = 1):
+        super(Ackley, self).__init__(name=name, seed=None, a=a, b=b, c=c, dim=dim)
 
-    def query(self, x: list) -> np.ndarray:
-        return super(Ackley, self).query(x=x)
+    @property
+    def a(self) -> float:
+        return self._configuration['a']
+
+    @property
+    def b(self) -> float:
+        return self._configuration['b']
+
+    @property
+    def c(self) -> float:
+        return self._configuration['c']
+
+    @property
+    def dim(self) -> int:
+        return self._configuration['dim']
 
 
 class Rosenbrock(Benchmark):
@@ -80,7 +87,7 @@ class Rosenbrock(Benchmark):
     """
 
     @staticmethod
-    def _build(structure: Structure):
+    def build(structure: Structure):
         # variables
         structure.add_custom_variable('x', dtype=list, description="the input vector")
         # parameters
@@ -100,19 +107,20 @@ class Rosenbrock(Benchmark):
             description='absolute gap from the optimum'
         )
 
-    @staticmethod
-    def _query(x, b, dim):
+    @querymethod
+    def query(self, x: list) -> float:
         x = np.array(x)
-        term1 = b * (x[1:] - x[:-1] ** 2) ** 2
+        term1 = self.b * (x[1:] - x[:-1] ** 2) ** 2
         term2 = (1 - x[:-1]) ** 2
-        return np.sum(term1 + term2)
+        return sum(term1 + term2)
 
-    def __init__(self,
-                 name: Optional[str] = None,
-                 seed: int = 42,
-                 b: float = 100,
-                 dim: int = 2):
-        super(Rosenbrock, self).__init__(name=name, seed=seed, b=b, dim=dim)
+    def __init__(self, name: Optional[str] = None, b: float = 100, dim: int = 2):
+        super(Rosenbrock, self).__init__(name=name, seed=None, b=b, dim=dim)
 
-    def query(self, x: list) -> np.ndarray:
-        return super(Rosenbrock, self).query(x=x)
+    @property
+    def b(self) -> float:
+        return self._configuration['b']
+
+    @property
+    def dim(self) -> int:
+        return self._configuration['dim']

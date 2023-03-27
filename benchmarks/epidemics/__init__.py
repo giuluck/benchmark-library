@@ -4,7 +4,7 @@ import numpy as np
 from pandas import DataFrame
 from scipy.integrate import odeint
 
-from model import Benchmark, Structure
+from model import Benchmark, Structure, querymethod
 
 
 class SIR(Benchmark):
@@ -20,7 +20,7 @@ class SIR(Benchmark):
     """
 
     @staticmethod
-    def _build(structure: Structure):
+    def build(structure: Structure):
         # variables
         structure.add_positive_variable('s0', description='the percentage of initial susceptibles')
         structure.add_positive_variable('i0', description='the percentage of initial infected')
@@ -55,8 +55,8 @@ class SIR(Benchmark):
             description='number of final recovered'
         )
 
-    @staticmethod
-    def _query(s0, i0, r0, beta, gamma, horizon):
+    @querymethod
+    def query(self, s0: float, i0: float, r0: float, beta: float, gamma: float) -> DataFrame:
         # define sir dynamics (normalization is not necessary since we assume the population to sum up to 1)
         def sir(s, i, _):
             t1 = beta * s * i
@@ -67,18 +67,19 @@ class SIR(Benchmark):
         data = odeint(
             func=lambda y, t: sir(*y),
             y0=np.array([s0, i0, r0]),
-            t=np.arange(horizon)
+            t=np.arange(self.horizon)
         )
         # build dataframe
-        data = DataFrame(data=data, index=np.arange(horizon), columns=["S", "I", "R"])
+        data = DataFrame(data=data, index=np.arange(self.horizon), columns=["S", "I", "R"])
         data.index.rename("time", inplace=True)
         return data
 
-    def __init__(self, name: Optional[str] = None, seed: int = 42, horizon: int = 300):
-        super(SIR, self).__init__(name=name, seed=seed, horizon=horizon)
+    def __init__(self, name: Optional[str] = None, horizon: int = 300):
+        super(SIR, self).__init__(name=name, seed=None, horizon=horizon)
 
-    def query(self, s0: float, i0: float, r0: float, beta: float, gamma: float) -> DataFrame:
-        return super(SIR, self).query(s0=s0, i0=i0, r0=r0, beta=beta, gamma=gamma)
+    @property
+    def horizon(self) -> int:
+        return self._configuration['horizon']
 
 
 class SEIR(Benchmark):
@@ -94,7 +95,7 @@ class SEIR(Benchmark):
     """
 
     @staticmethod
-    def _build(structure: Structure):
+    def build(structure: Structure):
         # variables
         structure.add_positive_variable('s0', description='the percentage of initial susceptibles')
         structure.add_positive_variable('e0', description='the percentage of initial exposed')
@@ -136,8 +137,8 @@ class SEIR(Benchmark):
             description='number of final recovered'
         )
 
-    @staticmethod
-    def _query(s0, e0, i0, r0, beta, gamma, latency, horizon):
+    @querymethod
+    def query(self, s0: float, e0: float, i0: float, r0: float, beta: float, gamma: float, latency: float) -> DataFrame:
         # define seir dynamics (normalization is not necessary since we assume the population to sum up to 1)
         def seir(s, e, i, _):
             t1 = beta * s * i
@@ -149,15 +150,16 @@ class SEIR(Benchmark):
         data = odeint(
             func=lambda y, t: seir(*y),
             y0=np.array([s0, e0, i0, r0]),
-            t=np.arange(horizon)
+            t=np.arange(self.horizon)
         )
         # build dataframe
-        data = DataFrame(data=data, index=np.arange(horizon), columns=["S", "E", "I", "R"])
+        data = DataFrame(data=data, index=np.arange(self.horizon), columns=["S", "E", "I", "R"])
         data.index.rename("time", inplace=True)
         return data
 
-    def __init__(self, name: Optional[str] = None, seed: int = 42, horizon: int = 300):
-        super(SEIR, self).__init__(name=name, seed=seed, horizon=horizon)
+    def __init__(self, name: Optional[str] = None, horizon: int = 300):
+        super(SEIR, self).__init__(name=name, seed=None, horizon=horizon)
 
-    def query(self, s0: float, e0: float, i0: float, r0: float, beta: float, gamma: float, latency: float) -> DataFrame:
-        return super(SEIR, self).query(s0=s0, e0=e0, i0=i0, r0=r0, beta=beta, gamma=gamma, latency=latency)
+    @property
+    def horizon(self) -> int:
+        return self._configuration['horizon']

@@ -1,3 +1,4 @@
+import inspect
 from typing import List, Callable, Any, Optional, Tuple, Dict
 
 import numpy as np
@@ -112,11 +113,15 @@ class Structure:
 
     def _add_cst(self, name: str, check: Callable, description: Optional[str]):
         assert name not in self._constraints, f"Name '{name}' is already assigned to another constraint"
+        inputs = inspect.signature(check).parameters.keys()
+        for inp in inputs:
+            msg = f"Input parameter '{inp}' does not match any benchmark variable or parameter"
+            assert inp in self._variables or inp in self._parameters, msg
         self._constraints[name] = Constraint(name=name, description=description, check=check)
 
-    def _add_mtr(self, name: str, function: Callable, description: Optional[str]):
+    def _add_mtr(self, name: str, evaluate: Callable, description: Optional[str]):
         assert name not in self._metrics, f"Name '{name}' is already assigned to another metric"
-        self._metrics[name] = Metric(name=name, description=description, function=function)
+        self._metrics[name] = Metric(name=name, description=description, evaluate=evaluate)
 
     # ------------------------------------------ STRUCTURE UTILITIES END -----------------------------------------------
     # ----------------------------------------- STRUCTURE PROPERTIES START ---------------------------------------------
@@ -129,16 +134,16 @@ class Structure:
         :param description:
             The benchmark description.
         """
+        self._variables: Dict[str, Variable] = {}
+        self._parameters: Dict[str, Parameter] = {}
+        self._constraints: Dict[str, Constraint] = {}
+        self._metrics: Dict[str, Metric] = {}
+
         self.alias: str = alias
         """The benchmark alias."""
 
         self.description: str = description
         """The benchmark description."""
-
-        self._variables: Dict[str, Variable] = {}
-        self._parameters: Dict[str, Parameter] = {}
-        self._constraints: Dict[str, Constraint] = {}
-        self._metrics: Dict[str, Metric] = {}
 
     @property
     def variables(self) -> List[Variable]:
@@ -607,7 +612,7 @@ class Structure:
     # --------------------------------------------- CONSTRAINTS METHODS END --------------------------------------------
     # ---------------------------------------------- METRICS METHODS START ---------------------------------------------
 
-    def add_sample_metric(self, name: str, function: Callable[[Sample], bool], description: Optional[str] = None):
+    def add_sample_metric(self, name: str, function: Callable[[Sample], float], description: Optional[str] = None):
         """A metric with custom function computed on a given sample.
 
         :param name:
@@ -619,11 +624,11 @@ class Structure:
         :param description:
             An optional textual description of the instance; default: None.
         """
-        self._add_mtr(name=name, function=function, description=description)
+        self._add_mtr(name=name, evaluate=function, description=description)
 
     def add_value_metric(self,
                          name: str,
-                         function: Callable[[Any], bool],
+                         function: Callable[[Any], float],
                          value: str = 'output',
                          description: Optional[str] = None):
         """A metric with custom function computed on a single value of the given sample.
@@ -644,11 +649,11 @@ class Structure:
             func = lambda sample: function(sample.output)
         else:
             func = lambda sample: function(sample.inputs[value])
-        self._add_mtr(name=name, function=func, description=description)
+        self._add_mtr(name=name, evaluate=func, description=description)
 
     def add_reference_metric(self,
                              name: str,
-                             metric: str | Callable[[Any], bool],
+                             metric: str | Callable[[Any], float],
                              reference: Any,
                              value: str = 'output',
                              description: Optional[str] = None):
@@ -677,4 +682,4 @@ class Structure:
             func = lambda sample: metric(reference, sample.output)
         else:
             func = lambda sample: metric(reference, sample.inputs[value])
-        self._add_mtr(name=name, function=func, description=description)
+        self._add_mtr(name=name, evaluate=func, description=description)

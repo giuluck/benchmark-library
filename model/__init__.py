@@ -1,2 +1,2 @@
-from model.benchmark import Benchmark
+from model.benchmark import Benchmark, querymethod
 from model.structure import Structure
