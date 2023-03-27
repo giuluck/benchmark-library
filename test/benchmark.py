@@ -3,6 +3,7 @@ import unittest
 from typing import Optional
 
 import numpy as np
+import pandas as pd
 
 from model import Benchmark, Structure, querymethod
 from model.datatypes import Sample
@@ -93,12 +94,14 @@ class TestBenchmark(unittest.TestCase):
         self.assertEqual(benchmark.name, 'dummy', msg='Wrong benchmark name')
         self.assertListEqual(benchmark.samples, [], msg='Wrong benchmark samples')
         self.assertDictEqual(benchmark.configuration, dict(par=-2), msg='Wrong benchmark configuration')
+        self.assertEqual(str(benchmark), "Dummy(name='dummy', seed=42, par=-2)", msg='Wrong benchmark representation')
         benchmark = Dummy(name='name', seed=0, par=-3)
         # test custom instance properties
         self.assertEqual(benchmark.seed, 0, msg='Wrong benchmark seed')
         self.assertEqual(benchmark.name, 'name', msg='Wrong benchmark name')
         self.assertListEqual(benchmark.samples, [], msg='Wrong benchmark samples')
         self.assertDictEqual(benchmark.configuration, dict(par=-3), msg='Wrong benchmark configuration')
+        self.assertEqual(str(benchmark), "Dummy(name='name', seed=0, par=-3)", msg='Wrong benchmark representation')
         # test wrong instance properties
         with self.assertRaises(AssertionError, msg='Init should raise an error when given parameter is not in domain'):
             Dummy(par=0)
@@ -127,10 +130,13 @@ class TestBenchmark(unittest.TestCase):
         self.assertListEqual(samples, benchmark.samples, msg='Wrong samples list after query call')
         # test correct evaluation call
         evaluation = dict(mtr=9.0)
-        self.assertDictEqual(evaluation, benchmark.evaluate().to_dict(), msg='Wrong benchmark evaluation')
-        self.assertDictEqual(evaluation, benchmark.evaluate(samples[1]).to_dict(), msg='Wrong benchmark evaluation')
+        self.assertDictEqual(evaluation, benchmark.evaluate(), msg='Wrong benchmark evaluation')
+        self.assertDictEqual(evaluation, benchmark.evaluate(samples[1]), msg='Wrong benchmark evaluation')
         evaluation = dict(mtr=16.0)
-        self.assertDictEqual(evaluation, benchmark.evaluate(samples[0]).to_dict(), msg='Wrong benchmark evaluation')
+        self.assertDictEqual(evaluation, benchmark.evaluate(samples[0]), msg='Wrong benchmark evaluation')
+        # test correct history call
+        df = pd.DataFrame(data=[[16.0], [9.0]], columns=['mtr'])
+        self.assertTrue(np.all(df == benchmark.history(plot=False)), msg='Wrong history dataframe')
 
     def test_serialization(self):
         rng = np.random.default_rng(0)

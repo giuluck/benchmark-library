@@ -17,10 +17,10 @@ def querymethod(target: Callable) -> Callable:
     """Decorator for benchmark 'query' abstract method."""
 
     def query(self, **inputs: Any) -> Any:
-        variables = {v.name: v for v in self.structure.variables}
+        variables = {v.name: v for v in self._structure.variables}
         # iterate over all the inputs in order to check that they represent valid parameters and valid types/values
         for name, val in inputs.items():
-            assert name in variables, f"'{name}' is not a valid input, choose one in {list(self.structure.variables)}"
+            assert name in variables, f"'{name}' is not a valid input, choose one in {list(self._structure.variables)}"
             var = variables.pop(name)
             assert var.check_dtype(val), f"'{name}' should be {stringify(var.dtype)}, got {stringify(type(val))}"
             assert var.check_domain(val), f"'{name}' domain is {var.domain}, got value {val}"
@@ -29,7 +29,7 @@ def querymethod(target: Callable) -> Callable:
         # create new dictionary containing both input variables and parameter configuration
         check = {**inputs, **self.configuration}
         # check global constraints feasibility
-        for cst in self.structure.constraints:
+        for cst in self._structure.constraints:
             desc = "" if cst.description is None else f"{cst.description}; "
             assert cst.check(**{i: check[i] for i in cst.inputs}), f"{desc}global constraint '{cst.name}' not satisfied"
         # evaluate the function, store the results, and eventually return the output
@@ -84,11 +84,11 @@ class Benchmark(ABC):
         """
         self._seed: Optional[int] = seed
         self._rng: np.random.Generator = np.random.default_rng(seed=seed)
-        self._name: str = self.alias.lower() if name is None else name
+        self._name: str = self._structure.alias.lower() if name is None else name
         self._configuration: Dict[str, Any] = {}
         self._samples: List[Sample] = []
         # check parameters configuration consistency
-        for par in self.structure.parameters:
+        for par in self._structure.parameters:
             if par.name in configuration:
                 value = configuration[par.name]
                 assert par.check_dtype(value), f"'{par.name}' should be of type {par.dtype.__name__}, got " \
@@ -103,7 +103,7 @@ class Benchmark(ABC):
     #   - for some properties that might be computationally intensive or frequently computed, their values can be
     #     stored at class level leveraging the @cachedclassproperty decorator
     @cachedclassproperty
-    def structure(self) -> Structure:
+    def _structure(self) -> Structure:
         """Calls the '_build' abstract method in order to build and store the internal benchmark structure."""
         # retrieve alias from class name
         alias = ' '.join(re.sub('([A-Z][a-z]+)', r' \1', re.sub('([A-Z]+)', r' \1', self.__name__)).split())
@@ -125,32 +125,32 @@ class Benchmark(ABC):
     @classproperty
     def alias(self) -> str:
         """The benchmark alias."""
-        return str(self.structure.alias)
+        return str(self._structure.alias)
 
     @classproperty
     def description(self) -> str:
         """The benchmark description."""
-        return str(self.structure.description)
+        return str(self._structure.description)
 
     @classproperty
     def variables(self) -> Dict[str, str]:
         """The benchmark variables."""
-        return {v.name: '' if v.description is None else v.description for v in self.structure.variables}
+        return {v.name: '' if v.description is None else v.description for v in self._structure.variables}
 
     @classproperty
     def parameters(self) -> Dict[str, str]:
         """The benchmark parameters."""
-        return {p.name: '' if p.description is None else p.description for p in self.structure.parameters}
+        return {p.name: '' if p.description is None else p.description for p in self._structure.parameters}
 
     @classproperty
     def constraints(self) -> Dict[str, str]:
         """The benchmark constraints."""
-        return {c.name: '' if c.description is None else c.description for c in self.structure.constraints}
+        return {c.name: '' if c.description is None else c.description for c in self._structure.constraints}
 
     @classproperty
     def metrics(self) -> Dict[str, str]:
         """The benchmark metrics."""
-        return {m.name: '' if m.description is None else m.description for m in self.structure.metrics}
+        return {m.name: '' if m.description is None else m.description for m in self._structure.metrics}
 
     @classmethod
     def describe(cls, brief: bool = True) -> str:
@@ -163,7 +163,7 @@ class Benchmark(ABC):
         :return:
             A string representing the textual description of the benchmark.
         """
-        string = f"{cls.structure.alias.upper()}\n\n{cls.structure.description}"
+        string = f"{cls._structure.alias.upper()}\n\n{cls._structure.description}"
 
         def _brief(obj: Any) -> str:
             description = obj.name if obj.description is None else f"{obj.name}: {obj.description}"
@@ -191,14 +191,14 @@ class Benchmark(ABC):
 
         # define printing pre-processing
         var, par, cst, mtr = (_brief, _brief, _brief, _brief) if brief else (_var_full, _par_full, _cst_full, _mtr_full)
-        if len(cls.structure.variables) > 0:
-            string += '\n\nVariables:\n' + '\n'.join([var(v) for v in cls.structure.variables])
-        if len(cls.structure.parameters) > 0:
-            string += '\n\nParameters:\n' + '\n'.join([par(p) for p in cls.structure.parameters])
-        if len(cls.structure.constraints) > 0:
-            string += '\n\nConstraints:\n' + '\n'.join([cst(c) for c in cls.structure.constraints])
-        if len(cls.structure.metrics) > 0:
-            string += '\n\nMetrics:\n' + '\n'.join([mtr(m) for m in cls.structure.metrics])
+        if len(cls._structure.variables) > 0:
+            string += '\n\nVariables:\n' + '\n'.join([var(v) for v in cls._structure.variables])
+        if len(cls._structure.parameters) > 0:
+            string += '\n\nParameters:\n' + '\n'.join([par(p) for p in cls._structure.parameters])
+        if len(cls._structure.constraints) > 0:
+            string += '\n\nConstraints:\n' + '\n'.join([cst(c) for c in cls._structure.constraints])
+        if len(cls._structure.metrics) > 0:
+            string += '\n\nMetrics:\n' + '\n'.join([mtr(m) for m in cls._structure.metrics])
         return string
 
     @staticmethod
@@ -238,7 +238,7 @@ class Benchmark(ABC):
         """The benchmark-specific parameter values."""
         return dict(self._configuration)
 
-    def evaluate(self, sample: Optional[Sample] = None) -> pd.Series:
+    def evaluate(self, sample: Optional[Sample] = None) -> Dict[str, float]:
         """Computes all the benchmark metrics on the given sample.
 
         :param sample:
@@ -250,8 +250,7 @@ class Benchmark(ABC):
         if sample is None:
             assert len(self._samples) > 0, "No samples to evaluate in the benchmark history"
             sample = self._samples[-1]
-        metrics = {metric.name: metric.evaluate(sample) for metric in self.structure.metrics}
-        return pd.Series(metrics)
+        return {metric.name: metric.evaluate(sample) for metric in self._structure.metrics}
 
     def history(self, plot: bool | Dict[str, Any] = False) -> pd.DataFrame:
         """Evaluates all the queried samples and optionally plot their values.
@@ -263,11 +262,11 @@ class Benchmark(ABC):
         :return:
             A dataframe where each column represents a metric, and each row a queried sample.
         """
-        history = pd.DataFrame([self.evaluate(sample) for sample in self._samples])
+        history = pd.DataFrame([self.evaluate(sample) for sample in self._samples], dtype=float)
         plot = dict(figsize=(16, 9), tight_layout=True) if plot is True else plot
         if isinstance(plot, dict):
             index = history.index + 1
-            for name, metric in self.structure.metrics.items():
+            for name, metric in self._structure.metrics.items():
                 plt.figure(**plot)
                 plt.plot(index, history[name])
                 plt.title(metric.description.title() if metric.description is not None else name.title())

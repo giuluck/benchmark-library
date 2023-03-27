@@ -3,7 +3,7 @@
 This benchmark provides simple simulation approaches for epidemic phenomena, based on classical compartmental models (SIR and SEIR).
 The benchmark can be used for epidemic control problems, for learning surrogates, or any other application where evaluating epidemic (or epidemic-like) behavior under controlled conditions can be useful.
 
-There two main `Benchmark` sub-classes:
+There are two available `Benchmark` subclasses:
 
 * `epidemics.SIR`, representing a compartmental model with the Susceptibles, Infected, and Recovered groups
 * `epidemics.SEIR`, representing a compartmental model with the Susceptibles, Exposed, Infected, and Recovered groups
@@ -53,23 +53,29 @@ There are three basic metrics, corresponding to the value of each component over
 A simple usage example would be:
 
 ```python
-TO BE ADDED
+from benchmarks import epidemics as epi
+
+benchmark = epi.SIR(horizon=365)
+benchmark.query(s0=0.4, i0=0.4, r0=0.2, beta=1.0, gamma=1. / 14)
+print(benchmark.evaluate())
 ```
 
 ## SEIR Model
 
-A SEIR model extends a SIR model by adding an additional compartment, corresponding to individuals that have been exposed to the epidemic agent, but are not yet showing symptoms and are not yet capable of infecting other individuals. The corresponding Ordinary Differential Equation is:
+A SEIR model extends a SIR model by considering an additional compartment, corresponding to individuals that have been exposed to the epidemic agent, but are not yet showing symptoms and are not yet capable of infecting other individuals. The corresponding Ordinary Differential Equation is:
+```math
 \begin{align}
-\frac{dS}{dt} & = - \beta S I \\
-\frac{dE}{dt} & = \beta S I - \alpha I\\
-\frac{dI}{dt} & = \alpha E - \gamma E\\
-\frac{dR}{dt} & = \gamma I
+    \frac{dS}{dt} & = - \beta S I \\
+    \frac{dE}{dt} & = \beta S I - \alpha I\\
+    \frac{dI}{dt} & = \alpha E - \gamma E\\
+    \frac{dR}{dt} & = \gamma I
 \end{align}
+```
 where $\alpha$ represents the rate at which the infection becomes active.
 
 Accordingly, the `epidemics.SEIR` class has two additional variables:
 
-* `e0`, representing the compoent $E_0$ of the initial state
+* `e0`, representing the component $E_0$ of the initial state
 * `latency`, corresponding to $\alpha$
 
 The constraint on the input variables is also modified accordingly:
