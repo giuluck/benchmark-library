@@ -147,7 +147,7 @@ if __name__ == "__main__":
     N_COV = 1
 
 
-    def baseline_hazard(t: int) -> Any:
+    def baseline_hazard(t: int) -> float:
         return np.sqrt(t * 0.2)
     
     covars = np.random.rand(N_PAT, N_COV)
