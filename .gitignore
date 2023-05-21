@@ -1,4 +1,8 @@
 .DS_Store
+.ipynb_checkpoints
+.ipynb
+.html
+.pdf
 __pycache__
 .idea
 venv
