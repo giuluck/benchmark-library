@@ -3,7 +3,10 @@
 .ipynb
 .html
 .pdf
+.eggs
 __pycache__
+benchmarks.egg-info
 .idea
 venv
 temp
+dist
