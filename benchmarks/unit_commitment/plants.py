@@ -1,15 +1,34 @@
-import pandas as pd
+from typing import Iterable, Union
 
+import numpy as np
 from ppsim import Plant
 
 
-def simple(df: pd.DataFrame) -> Plant:
-    plant = Plant(horizon=df.index)
+def _get_variance(variance: Union[float, Iterable[float]], size: int) -> np.ndarray:
+    if isinstance(variance, float):
+        variance = np.ones(size) * variance
+    else:
+        variance = np.array(variance)
+        assert len(variance) == size, f"Expected variance vector of size {size}, got {len(variance)}"
+    return variance
+
+def simple(
+        horizon: Union[float, Iterable[float]],
+        heat_demand: Union[float, Iterable[float]],
+        gas_purchase: Union[float, Iterable[float]],
+        electricity_selling: Union[float, Iterable[float]],
+        heat_demand_variance: Union[float, Iterable[float]] = 0.0,
+        gas_purchase_variance: Union[float, Iterable[float]] = 0.0,
+        electricity_selling_variance: Union[float, Iterable[float]] = 0.0
+) -> Plant:
+    plant = Plant(horizon=horizon)
+    gas_purchase_variance = _get_variance(gas_purchase_variance, size=len(horizon))
     plant.add_extremity(
         kind='supplier',
         name='gas',
         commodity='gas',
-        predictions=df['gas purchase']
+        predictions=gas_purchase,
+        variance=lambda _, series: gas_purchase_variance[len(series)]
     )
     plant.add_machine(name='boiler', parents='gas', setpoint={
         'setpoint': [0, 1],
@@ -21,30 +40,44 @@ def simple(df: pd.DataFrame) -> Plant:
         'input': {'gas': [67.5, 135]},
         'output': {'heat': [27, 50], 'elec': [23, 50]}
     })
+    heat_demand_variance = _get_variance(heat_demand_variance, size=len(horizon))
     plant.add_extremity(
         kind='customer',
         name='heat',
         commodity='heat',
         parents=['chp', 'boiler'],
-        predictions=df['heat demand']
+        predictions=heat_demand,
+        variance=lambda _, series: heat_demand_variance[len(series)]
     )
+    electricity_selling_variance = _get_variance(electricity_selling_variance, size=len(horizon))
     plant.add_extremity(
         kind='purchaser',
         name='grid',
         commodity='elec',
         parents='chp',
-        predictions=df['electricity selling']
+        predictions=electricity_selling,
+        variance=lambda _, series: electricity_selling_variance[len(series)]
     )
     return plant
 
 
-def medium(df: pd.DataFrame) -> Plant:
-    plant = Plant(horizon=df.index)
+def medium(
+        horizon: Union[float, Iterable[float]],
+        heat_demand: Union[float, Iterable[float]],
+        gas_purchase: Union[float, Iterable[float]],
+        electricity_selling: Union[float, Iterable[float]],
+        heat_demand_variance: Union[float, Iterable[float]] = 0.0,
+        gas_purchase_variance: Union[float, Iterable[float]] = 0.0,
+        electricity_selling_variance: Union[float, Iterable[float]] = 0.0
+) -> Plant:
+    plant = Plant(horizon=horizon)
+    gas_purchase_variance = _get_variance(gas_purchase_variance, size=len(horizon))
     plant.add_extremity(
         kind='supplier',
         name='gas',
         commodity='gas',
-        predictions=df['gas purchase']
+        predictions=gas_purchase,
+        variance=lambda _, series: gas_purchase_variance[len(series)]
     )
     plant.add_machine(name='boiler', parents='gas', setpoint={
         'setpoint': [0, 1],
@@ -63,36 +96,56 @@ def medium(df: pd.DataFrame) -> Plant:
         capacity=45,
         dissipation=0.02
     )
+    heat_demand_variance = _get_variance(heat_demand_variance, size=len(horizon))
     plant.add_extremity(
         kind='customer',
         name='heat',
         commodity='heat',
-        parents=['chp', 'boiler', 'hws'],
-        predictions=df['heat demand']
+        parents=['chp', 'boiler'],
+        predictions=heat_demand,
+        variance=lambda _, series: heat_demand_variance[len(series)]
     )
+    electricity_selling_variance = _get_variance(electricity_selling_variance, size=len(horizon))
     plant.add_extremity(
         kind='purchaser',
         name='grid',
         commodity='elec',
         parents='chp',
-        predictions=df['electricity selling']
+        predictions=electricity_selling,
+        variance=lambda _, series: electricity_selling_variance[len(series)]
     )
     return plant
 
 
-def hard(df: pd.DataFrame) -> Plant:
-    plant = Plant(horizon=df.index)
+def hard(
+        horizon: Union[float, Iterable[float]],
+        heat_demand: Union[float, Iterable[float]],
+        cooling_demand: Union[float, Iterable[float]],
+        gas_purchase: Union[float, Iterable[float]],
+        electricity_purchase: Union[float, Iterable[float]],
+        electricity_selling: Union[float, Iterable[float]],
+        heat_demand_variance: Union[float, Iterable[float]] = 0.0,
+        cooling_demand_variance: Union[float, Iterable[float]] = 0.0,
+        gas_purchase_variance: Union[float, Iterable[float]] = 0.0,
+        electricity_purchase_variance: Union[float, Iterable[float]] = 0.0,
+        electricity_selling_variance: Union[float, Iterable[float]] = 0.0
+) -> Plant:
+    plant = Plant(horizon=horizon)
+    gas_purchase_variance = _get_variance(gas_purchase_variance, size=len(horizon))
     plant.add_extremity(
         kind='supplier',
         name='gas',
         commodity='gas',
-        predictions=df['gas purchase']
+        predictions=gas_purchase,
+        variance=lambda _, series: gas_purchase_variance[len(series)]
     )
+    electricity_purchase_variance = _get_variance(electricity_purchase_variance, size=len(horizon))
     plant.add_extremity(
         kind='supplier',
         name='elec',
         commodity='elec',
-        predictions=df['electricity purchase']
+        predictions=electricity_purchase,
+        variance=lambda _, series: electricity_purchase_variance[len(series)]
     )
     plant.add_machine(name='boiler', parents='gas', setpoint={
         'setpoint': [0, 1],
@@ -121,25 +174,31 @@ def hard(df: pd.DataFrame) -> Plant:
         'input': {'heat': [0, 3]},
         'output': {'cool': [0, 2]}
     })
+    heat_demand_variance = _get_variance(heat_demand_variance, size=len(horizon))
     plant.add_extremity(
         kind='customer',
         name='heat',
         commodity='heat',
-        parents=['chp', 'boiler', 'hws'],
-        predictions=df['heat demand']
+        parents=['chp', 'boiler'],
+        predictions=heat_demand,
+        variance=lambda _, series: heat_demand_variance[len(series)]
     )
+    cooling_demand_variance = _get_variance(cooling_demand_variance, size=len(horizon))
     plant.add_extremity(
         kind='customer',
         name='cool',
         commodity='cool',
         parents=['a_chiller', 'e_chiller'],
-        predictions=df['cooling demand']
+        predictions=cooling_demand,
+        variance=lambda _, series: cooling_demand_variance[len(series)]
     )
+    electricity_selling_variance = _get_variance(electricity_selling_variance, size=len(horizon))
     plant.add_extremity(
         kind='purchaser',
         name='grid',
         commodity='elec',
         parents='chp',
-        predictions=df['electricity selling']
+        predictions=electricity_selling,
+        variance=lambda _, series: electricity_selling_variance[len(series)]
     )
     return plant
