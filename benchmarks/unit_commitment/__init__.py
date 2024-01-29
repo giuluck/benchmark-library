@@ -4,10 +4,10 @@ from typing import Optional, Literal
 import joblib
 import numpy as np
 import pandas as pd
-from ppsim import Plant
-from ppsim.plant import RecourseAction
-from ppsim.plant.execution import SimulationOutput
-from ppsim.utils.typing import Plan
+from powerplantsim import Plant
+from powerplantsim.plant import RecourseAction
+from powerplantsim.plant.execution import SimulationOutput
+from powerplantsim.utils.typing import Plan
 from sklearn.gaussian_process import GaussianProcessRegressor
 
 from benchmarks.unit_commitment import plants, metrics

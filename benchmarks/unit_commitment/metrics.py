@@ -1,5 +1,5 @@
 import pandas as pd
-from ppsim.plant.execution import SimulationOutput
+from powerplantsim.plant.execution import SimulationOutput
 
 
 def demands_gap(output: SimulationOutput) -> pd.DataFrame:

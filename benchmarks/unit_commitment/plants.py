@@ -1,7 +1,7 @@
 from typing import Iterable, Union
 
 import numpy as np
-from ppsim import Plant
+from powerplantsim import Plant
 
 
 def _get_variance(variance: Union[float, Iterable[float]], size: int) -> np.ndarray:
@@ -21,6 +21,7 @@ def simple(
         gas_purchase_variance: Union[float, Iterable[float]] = 0.0,
         electricity_selling_variance: Union[float, Iterable[float]] = 0.0
 ) -> Plant:
+    # noinspection DuplicatedCode
     plant = Plant(horizon=horizon)
     gas_purchase_variance = _get_variance(gas_purchase_variance, size=len(horizon))
     plant.add_extremity(
@@ -30,16 +31,23 @@ def simple(
         predictions=gas_purchase,
         variance=lambda _, series: gas_purchase_variance[len(series)]
     )
-    plant.add_machine(name='boiler', parents='gas', setpoint={
-        'setpoint': [0, 1],
-        'input': {'gas': [0, 100]},
-        'output': {'heat': [0, 90]}
-    })
-    plant.add_machine(name='chp', parents='gas', max_starting=(3, 24), setpoint={
-        'setpoint': [0.5, 1],
-        'input': {'gas': [67.5, 135]},
-        'output': {'heat': [27, 50], 'elec': [23, 50]}
-    })
+    plant.add_machine(
+        name='boiler',
+        parents='gas',
+        commodity='gas',
+        setpoint=[0, 1],
+        inputs=[0, 100],
+        outputs={'heat': [0, 90]}
+    )
+    plant.add_machine(
+        name='chp',
+        parents='gas',
+        commodity='gas',
+        setpoint=[0.5, 1],
+        inputs=[67.5, 135],
+        outputs={'heat': [27, 50], 'elec': [23, 50]},
+        max_starting=(3, 24)
+    )
     heat_demand_variance = _get_variance(heat_demand_variance, size=len(horizon))
     plant.add_extremity(
         kind='customer',
@@ -70,6 +78,7 @@ def medium(
         gas_purchase_variance: Union[float, Iterable[float]] = 0.0,
         electricity_selling_variance: Union[float, Iterable[float]] = 0.0
 ) -> Plant:
+    # noinspection DuplicatedCode
     plant = Plant(horizon=horizon)
     gas_purchase_variance = _get_variance(gas_purchase_variance, size=len(horizon))
     plant.add_extremity(
@@ -79,16 +88,23 @@ def medium(
         predictions=gas_purchase,
         variance=lambda _, series: gas_purchase_variance[len(series)]
     )
-    plant.add_machine(name='boiler', parents='gas', setpoint={
-        'setpoint': [0, 1],
-        'input': {'gas': [0, 100]},
-        'output': {'heat': [0, 90]}
-    })
-    plant.add_machine(name='chp', parents='gas', setpoint={
-        'setpoint': [0.5, 1],
-        'input': {'gas': [67.5, 135]},
-        'output': {'heat': [27, 50], 'elec': [23, 50]}
-    })
+    plant.add_machine(
+        name='boiler',
+        parents='gas',
+        commodity='gas',
+        setpoint=[0, 1],
+        inputs=[0, 100],
+        outputs={'heat': [0, 90]}
+    )
+    plant.add_machine(
+        name='chp',
+        parents='gas',
+        commodity='gas',
+        setpoint=[0.5, 1],
+        inputs=[67.5, 135],
+        outputs={'heat': [27, 50], 'elec': [23, 50]},
+        max_starting=(3, 24)
+    )
     plant.add_storage(
         name='hws',
         commodity='heat',
@@ -101,7 +117,7 @@ def medium(
         kind='customer',
         name='heat',
         commodity='heat',
-        parents=['chp', 'boiler'],
+        parents=['hws', 'chp', 'boiler'],
         predictions=heat_demand,
         variance=lambda _, series: heat_demand_variance[len(series)]
     )
@@ -147,16 +163,23 @@ def hard(
         predictions=electricity_purchase,
         variance=lambda _, series: electricity_purchase_variance[len(series)]
     )
-    plant.add_machine(name='boiler', parents='gas', setpoint={
-        'setpoint': [0, 1],
-        'input': {'gas': [0, 100]},
-        'output': {'heat': [0, 90]}
-    })
-    plant.add_machine(name='chp', parents='gas', setpoint={
-        'setpoint': [0.5, 1],
-        'input': {'gas': [67.5, 135]},
-        'output': {'heat': [27, 50], 'elec': [23, 50]}
-    })
+    plant.add_machine(
+        name='boiler',
+        parents='gas',
+        commodity='gas',
+        setpoint=[0, 1],
+        inputs=[0, 100],
+        outputs={'heat': [0, 90]}
+    )
+    plant.add_machine(
+        name='chp',
+        parents='gas',
+        commodity='gas',
+        setpoint=[0.5, 1],
+        inputs=[67.5, 135],
+        outputs={'heat': [27, 50], 'elec': [23, 50]},
+        max_starting=(3, 24)
+    )
     plant.add_storage(
         name='hws',
         commodity='heat',
@@ -164,22 +187,28 @@ def hard(
         capacity=45,
         dissipation=0.02
     )
-    plant.add_machine(name='e_chiller', parents=['elec', 'chp'], setpoint={
-        'setpoint': [0, 1],
-        'input': {'elec': [0, 0.7]},
-        'output': {'cool': [0, 2]}
-    })
-    plant.add_machine(name='a_chiller', parents=['chp', 'boiler', 'hws'], setpoint={
-        'setpoint': [0, 1],
-        'input': {'heat': [0, 3]},
-        'output': {'cool': [0, 2]}
-    })
+    plant.add_machine(
+        name='e_chiller',
+        parents=['elec', 'chp'],
+        commodity='elec',
+        setpoint=[0, 1],
+        inputs=[0, 0.7],
+        outputs={'cool': [0, 2]}
+    )
+    plant.add_machine(
+        name='a_chiller',
+        parents=['chp', 'boiler', 'hws'],
+        commodity='heat',
+        setpoint=[0, 1],
+        inputs=[0, 3],
+        outputs={'cool': [0, 2]}
+    )
     heat_demand_variance = _get_variance(heat_demand_variance, size=len(horizon))
     plant.add_extremity(
         kind='customer',
         name='heat',
         commodity='heat',
-        parents=['chp', 'boiler'],
+        parents=['hws', 'chp', 'boiler'],
         predictions=heat_demand,
         variance=lambda _, series: heat_demand_variance[len(series)]
     )
