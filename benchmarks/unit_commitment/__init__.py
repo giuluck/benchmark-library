@@ -4,6 +4,7 @@ from typing import Optional, Literal
 import joblib
 import numpy as np
 import pandas as pd
+from descriptors import cachedproperty
 from powerplantsim import Plant
 from powerplantsim.plant import RecourseAction
 from powerplantsim.plant.execution import SimulationOutput
@@ -94,9 +95,7 @@ class UnitCommitment(Benchmark):
 
     def _plant(self, variance: bool) -> Plant:
         # retrieve data and gaussian process regressor
-        with importlib.resources.path('benchmarks.unit_commitment', 'data.csv') as file:
-            df = pd.read_csv(file).iloc[(self.day - 1) * 24: self.day * 24]
-            df['datetime'] = pd.to_datetime(df['datetime'])
+        df = self.data
         with importlib.resources.path('benchmarks.unit_commitment', 'gp.joblib') as file:
             gp = joblib.load(file)
         # handle plant
@@ -184,6 +183,13 @@ class UnitCommitment(Benchmark):
     def uncertainty_error(self) -> float:
         return self.configuration['uncertainty_error']
 
-    @property
+    @cachedproperty
     def plant(self) -> Plant:
         return self._plant(variance=False)
+
+    @cachedproperty
+    def data(self) -> pd.DataFrame:
+        with importlib.resources.path('benchmarks.unit_commitment', 'data.csv') as file:
+            df = pd.read_csv(file).iloc[(self.day - 1) * 24: self.day * 24]
+            df['datetime'] = pd.to_datetime(df['datetime'])
+        return df
