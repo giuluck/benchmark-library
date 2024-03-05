@@ -12,6 +12,7 @@ def _get_variance(variance: Union[float, Iterable[float]], size: int) -> np.ndar
         assert len(variance) == size, f"Expected variance vector of size {size}, got {len(variance)}"
     return variance
 
+
 def simple(
         horizon: Union[float, Iterable[float]],
         heat_demand: Union[float, Iterable[float]],
@@ -36,16 +37,16 @@ def simple(
         parents='gas',
         commodity='gas',
         setpoint=[0, 1],
-        inputs=[0, 100],
-        outputs={'heat': [0, 90]}
+        inputs=[0, 100000],
+        outputs={'heat': [0, 90000]}
     )
     plant.add_machine(
         name='chp',
         parents='gas',
         commodity='gas',
         setpoint=[0.5, 1],
-        inputs=[67.5, 135],
-        outputs={'heat': [27, 50], 'elec': [23, 50]},
+        inputs=[67500, 135000],
+        outputs={'heat': [27000, 50000], 'elec': [23000, 50000]},
         max_starting=(3, 24)
     )
     heat_demand_variance = _get_variance(heat_demand_variance, size=len(horizon))
@@ -93,23 +94,25 @@ def medium(
         parents='gas',
         commodity='gas',
         setpoint=[0, 1],
-        inputs=[0, 100],
-        outputs={'heat': [0, 90]}
+        inputs=[0, 100000],
+        outputs={'heat': [0, 90000]}
     )
     plant.add_machine(
         name='chp',
         parents='gas',
         commodity='gas',
         setpoint=[0.5, 1],
-        inputs=[67.5, 135],
-        outputs={'heat': [27, 50], 'elec': [23, 50]},
+        inputs=[67500, 135000],
+        outputs={'heat': [27000, 50000], 'elec': [23000, 50000]},
         max_starting=(3, 24)
     )
     plant.add_storage(
         name='hws',
         commodity='heat',
         parents=['chp', 'boiler'],
-        capacity=45,
+        capacity=45000,
+        charge_rate=15000,
+        discharge_rate=15000,
         dissipation=0.02
     )
     heat_demand_variance = _get_variance(heat_demand_variance, size=len(horizon))
@@ -168,23 +171,25 @@ def hard(
         parents='gas',
         commodity='gas',
         setpoint=[0, 1],
-        inputs=[0, 100],
-        outputs={'heat': [0, 90]}
+        inputs=[0, 100000],
+        outputs={'heat': [0, 90000]}
     )
     plant.add_machine(
         name='chp',
         parents='gas',
         commodity='gas',
         setpoint=[0.5, 1],
-        inputs=[67.5, 135],
-        outputs={'heat': [27, 50], 'elec': [23, 50]},
+        inputs=[67500, 135000],
+        outputs={'heat': [27000, 50000], 'elec': [23000, 50000]},
         max_starting=(3, 24)
     )
     plant.add_storage(
         name='hws',
         commodity='heat',
         parents=['chp', 'boiler'],
-        capacity=45,
+        capacity=45000,
+        charge_rate=15000,
+        discharge_rate=15000,
         dissipation=0.02
     )
     plant.add_machine(
@@ -192,16 +197,16 @@ def hard(
         parents=['elec', 'chp'],
         commodity='elec',
         setpoint=[0, 1],
-        inputs=[0, 0.7],
-        outputs={'cool': [0, 2]}
+        inputs=[0, 7000],
+        outputs={'cool': [0, 2000]}
     )
     plant.add_machine(
         name='a_chiller',
         parents=['chp', 'boiler', 'hws'],
         commodity='heat',
         setpoint=[0, 1],
-        inputs=[0, 3],
-        outputs={'cool': [0, 2]}
+        inputs=[0, 3000],
+        outputs={'cool': [0, 2000]}
     )
     heat_demand_variance = _get_variance(heat_demand_variance, size=len(horizon))
     plant.add_extremity(

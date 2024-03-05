@@ -22,7 +22,7 @@ with open('README.md', 'r') as readme:
         packages=find_packages(include=['benchmarks*']),
         python_requires='~=3.10',
         install_requires=[
-            'Dickens~=2.0.0',
+            'Dickens~=2.1.1',
             'dill~=0.3.7',
             'matplotlib~=3.8.2',
             'numpy~=1.26.2',
