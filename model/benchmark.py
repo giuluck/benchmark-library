@@ -112,7 +112,7 @@ class Benchmark(ABC):
             description = ""
         elif '\n' not in self.__doc__:
             description = self.__doc__
-        else:
+        else: # TODO this section does not work with certaint docstrings
             docstring = self.__doc__.strip().split('\n')
             min_tab = np.min([len(line) - len(line.lstrip()) for line in docstring[1:] if line != ''])
             docstring[1:] = [line[min_tab:].rstrip() for line in docstring[1:]]

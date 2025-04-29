@@ -1,0 +1,10 @@
+scikit-decide==1.0.2
+openap==2.2
+numpy==1.26.2
+pygeodesy==25.4.25
+cartopy==0.24.1
+pygrib==2.1.6
+gymnasium==1.1.1
+cfgrib==0.9.15.0
+torch==2.7.0
+xarray==2024.7.0
