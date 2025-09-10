@@ -1,0 +1,3 @@
+[submodule "benchmarks/guided_flight_planning/hybrid-rl"]
+	path = benchmarks/guided_flight_planning/hybrid-rl
+	url = https://gitlab.aniti.fr/tuples/use-cases/flight-diversion/hybrid-rl.git
