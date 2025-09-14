@@ -1,3 +1,6 @@
 [submodule "benchmarks/guided_flight_planning/hybrid_rl"]
 	path = benchmarks/guided_flight_planning/hybrid_rl
 	url = https://gitlab.aniti.fr/tuples/use-cases/flight-diversion/hybrid-rl.git
+[submodule "benchmarks/beluga_logistics/beluga_challenge_toolkit"]
+	path = benchmarks/beluga_logistics/beluga_challenge_toolkit
+	url = https://github.com/TUPLES-Trustworthy-AI/Beluga-AI-Challenge-Toolkit.git
